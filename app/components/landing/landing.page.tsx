@@ -51,30 +51,29 @@ export default function LandingPage() {
       </Button>
 
       {/* SCROLL CONTENT BELOW THE HEADER IMAGE */}
-      <div className="relative z-10 pt-[clamp(310px,42vh,490px)]  flex flex-col items-center pb-10">
-        <Card className="w-full max-w-xl shadow-xl rounded-3xl border-none dark:bg-[#0B0A1B]">
-          <CardContent className="pt-4 px-6 pb-10">
+<div className="relative z-10 pt-[clamp(310px,42vh,490px)] flex flex-col items-center pb-0">
+  <Card className="w-full max-w-xl rounded-t-3xl rounded-b-none border-none shadow-none dark:bg-[#0B0A1B] bg-white">
+    <CardContent className="pt-4 px-6 pb-10">
+      <h2 className="text-[26px] font-medium">
+        Find the right ride, <br /> every time
+      </h2>
 
-            <h2 className="text-[26px] font-medium">
-              Find the right ride, <br /> every time
-            </h2>
+      <h4 className="font-light m-3 mt-10">Select your pick time</h4>
+      <PickupSelector pickup={true} />
 
-            <h4 className="font-light m-3 mt-10">Select your pick time</h4>
-            <PickupSelector pickup={true} />
+      <h4 className="font-light m-3">Select your dropoff time</h4>
+      <PickupSelector pickup={false} />
 
-            <h4 className="font-light m-3">Select your dropoff time</h4>
-            <PickupSelector pickup={false} />
+      <Button
+        onClick={navHandler}
+        className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] mt-24 text-black font-semibold text-lg"
+      >
+        Let&apos;s Drive
+      </Button>
+    </CardContent>
+  </Card>
+</div>
 
-            <Button
-              onClick={navHandler}
-              className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] mt-24 text-black font-semibold text-lg"
-            >
-              Let&apos;s Drive
-            </Button>
-
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }
