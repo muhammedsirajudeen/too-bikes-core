@@ -99,7 +99,7 @@ export default function RouterLoadingProvider({ children }: Props) {
               ))}
             </div>
               {/* <Image src={theme==="light" ? "/loading_light.png" : "/loading_dark.png"} alt="Loading Image" width={400} height={400} /> */}
-              <h1 className="text-center text-3xl mt-48" >Your ride awaits.....</h1>
+              {/* <h1 className="text-center text-3xl mt-48" >Your ride awaits.....</h1> */}
             {/* Hills */}
             <div className="absolute bottom-0 left-0 right-0 h-48">
               <svg className="w-full h-full" viewBox="0 0 1200 300" preserveAspectRatio="none">
