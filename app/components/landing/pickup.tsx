@@ -7,47 +7,68 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
-export default function PickupSelector({pickup}:{pickup:boolean}) {
+export default function PickupSelector({ pickup }: { pickup: boolean }) {
   const [date, setDate] = useState<Date | null>(null);
   const [time, setTime] = useState<string | null>(null);
 
+  // control both popovers
+  const [openDate, setOpenDate] = useState(false);
+  const [openTime, setOpenTime] = useState(false);
+
   return (
     <div className="w-full flex justify-center">
-      <div className="
-        flex items-center gap-6 px-6 py-3 rounded-full
-        bg-white shadow-md border border-gray-200 min-w-[98%]
-      ">
+      <div
+        className="
+          flex items-center gap-3 md:gap-8 px-6 py-4 rounded-full
+          bg-white shadow-md border border-gray-200 w-full
+          dark:bg-[#191B27] dark:border-gray-700
+        "
+      >
         {/* DATE PICKER */}
-        <Popover>
-          <PopoverTrigger className="flex items-center gap-2 text-gray-500 cursor-pointer">
-            <CalendarIcon className="w-5 h-5 text-gray-500" />
-            <span className="select-none text-sm text-nowrap">
-              {date ? format(date, "PPP") : pickup ? "Select Pickup date" : "Select Drop date"}
+        <Popover open={openDate} onOpenChange={setOpenDate}>
+          <PopoverTrigger className="flex items-center gap-3 cursor-pointer">
+            <CalendarIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+
+            <span className="select-none text-sm whitespace-normal break-words text-left text-gray-700 dark:text-gray-200">
+              {date
+                ? format(date, "PPP")
+                : pickup
+                ? "Select Pickup date"
+                : "Select Drop date"}
             </span>
           </PopoverTrigger>
 
-          <PopoverContent className="p-0">
+          <PopoverContent className="p-0 dark:bg-[#191B27] dark:border-gray-700">
             <Calendar
               mode="single"
               selected={date ?? undefined}
-              onSelect={(d) => d && setDate(d)}
+              onSelect={(d) => {
+                if (!d) return;
+                setDate(d);
+                setOpenDate(false); // 🔥 CLOSE POPUP
+              }}
+              className="dark:bg-[#191B27] dark:text-white"
             />
           </PopoverContent>
         </Popover>
 
-        {/* VERTICAL DIVIDER */}
-        <div className="w-px h-8 bg-gray-300" />
+        <div className="w-px h-8 bg-gray-300 dark:bg-gray-600" />
 
         {/* TIME PICKER */}
-        <Popover>
-          <PopoverTrigger className="flex items-center gap-2 text-gray-500 cursor-pointer">
-            <Clock className="w-5 h-5 text-gray-500" />
-            <span className="select-none text-sm text-nowrap">
-              {time ?? pickup ? "Select Pickup time" : "Select Dropoff time"}
+        <Popover open={openTime} onOpenChange={setOpenTime}>
+          <PopoverTrigger className="flex items-center gap-3 cursor-pointer">
+            <Clock className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+
+            <span className="select-none text-xs whitespace-normal break-words text-left text-gray-700 dark:text-gray-200">
+              {time
+                ? time
+                : pickup
+                ? "Select Pickup time"
+                : "Select Dropoff time"}
             </span>
           </PopoverTrigger>
 
-          <PopoverContent className="p-3">
+          <PopoverContent className="p-3 dark:bg-[#191B27] dark:border-gray-700">
             <div className="grid grid-cols-3 gap-2">
               {[
                 "09:00", "10:00", "11:00",
@@ -56,12 +77,15 @@ export default function PickupSelector({pickup}:{pickup:boolean}) {
               ].map((t) => (
                 <button
                   key={t}
-                  onClick={() => setTime(t)}
+                  onClick={() => {
+                    setTime(t);
+                    setOpenTime(false); // 🔥 CLOSE POPUP
+                  }}
                   className={cn(
-                    "px-3 py-2 rounded-md text-sm border",
+                    "px-3 py-2 rounded-md text-sm border transition",
                     time === t
-                      ? "bg-black text-white border-black"
-                      : "bg-white text-gray-600 border-gray-300"
+                      ? "bg-black text-white border-black dark:bg-white dark:text-black"
+                      : "bg-white text-gray-700 border-gray-300 dark:bg-[#2A2D3A] dark:text-gray-200 dark:border-gray-600"
                   )}
                 >
                   {t}
@@ -70,7 +94,6 @@ export default function PickupSelector({pickup}:{pickup:boolean}) {
             </div>
           </PopoverContent>
         </Popover>
-
       </div>
     </div>
   );
