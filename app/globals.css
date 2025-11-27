@@ -126,3 +126,38 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+@keyframes twinkle {
+
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes cloudDrift {
+  0% {
+    transform: translateX(-10%);
+  }
+
+  100% {
+    transform: translateX(110%);
+  }
+}
+
+@keyframes cloudDrift2 {
+  0% {
+    transform: translateX(110%);
+  }
+
+  100% {
+    transform: translateX(-10%);
+  }
+}
