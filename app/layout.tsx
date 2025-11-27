@@ -3,6 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "./provider/theme.provider";
 
 import { Poppins } from "next/font/google";
+import RouterLoadingProvider from "./provider/router.provider";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -27,7 +28,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
           <ThemeProvider>
+            <RouterLoadingProvider>
             {children}
+            </RouterLoadingProvider>
           </ThemeProvider>
       </body>
     </html>

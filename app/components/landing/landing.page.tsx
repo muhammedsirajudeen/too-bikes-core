@@ -7,19 +7,24 @@ import { Button } from "@/components/ui/button";
 import PickupSelector from "./pickup";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
+import { useRouter } from "next/navigation";
+import ROUTE_CONSTANTS from "@/constants/routeConstants";
 
 export default function LandingPage() {
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
-
+    const router=useRouter()
     useEffect(() => {
+         
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setMounted(true);
     }, []);
 
     // Prevent hydration mismatch
     if (!mounted) return null;
-
+    const navHandler=()=>{
+        router.push(ROUTE_CONSTANTS.HOME)
+    }
     return (
         <div className="w-full min-h-screen bg-[#ffffff] dark:bg-[#0B0A1B] flex flex-col items-center">
 
@@ -62,10 +67,9 @@ export default function LandingPage() {
                     <h4 className="font-light m-3">Select your dropoff time</h4>
                     <PickupSelector pickup={false} />
 
-                    <Button className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] mt-28 text-black font-semibold text-lg">
+                    <Button onClick={navHandler}  className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] mt-24 text-black font-semibold text-lg">
                         Let&apos;s Drive
                     </Button>
-
                 </CardContent>
             </Card>
         </div>
