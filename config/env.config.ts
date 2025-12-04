@@ -1,65 +1,23 @@
-import dotenv from "dotenv";
-dotenv.config();
-
+// config/env.config.ts
 export const env = {
-  get PORT() {
-    return Number(process.env.PORT) || 5000;
-  },
-  get MONGO_URI() {
-    return process.env.MONGO_URI;
-  },
-  get JWT_ACCESS_SECRET() {
-    return process.env.JWT_ACCESS_SECRET!;
-  },
-  get JWT_REFRESH_SECRET() {
-    return process.env.JWT_REFRESH_SECRET!;
-  },
-  get CLIENT_URL() {
-    return process.env.CLIENT_URL;
-  },
-  get SENDER_EMAIL() {
-    return process.env.SENDER_EMAIL;
-  },
-  get PASSKEY() {
-    return process.env.PASSKEY;
-  },
-  get REDIS_URL() {
-    return process.env.REDIS_URL;
-  },
-  get NODE_ENV() {
-    return process.env.NODE_ENV;
-  },
-  get RESET_PASS_URL() {
-    return process.env.RESET_PASS_URL;
-  },
-  get AWS_REGION() {
-    return process.env.AWS_REGION;
-  },
-  get S3_BUCKET_NAME() {
-    return process.env.S3_BUCKET_NAME;
-  },
-  get AWS_ACCESS_KEY_ID() {
-    return process.env.AWS_ACCESS_KEY_ID;
-  },
-  get AWS_SECRET_ACCESS_KEY() {
-    return process.env.AWS_SECRET_ACCESS_KEY;
-  },
-  get ERROR_LOG_RETENTION_PERIOD(){
-    return process.env.ERROR_LOG_RETENTION_PERIOD;
-  },
-  get START_INTERVAL(){
-    return process.env.START_INTERVAL;
-  },
-  get END_INTERVAL(){
-    return process.env.END_INTERVAL;
-  },
-  get STRIPE_SECRET_KEY(){
-    return process.env.STRIPE_SECRET_KEY;
-  },
-  get WEBHOOK_SECRET(){
-    return process.env.WEBHOOK_SECRET;
-  },
-  get COOKIE_MAX_AGE(){
-    return process.env.COOKIE_MAX_AGE;
-  }
+  PORT: Number(process.env.PORT) || 5000,
+  MONGO_URI: process.env.MONGO_URI!,
+  JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET!,
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET!,
+  CLIENT_URL: process.env.CLIENT_URL!,
+  SENDER_EMAIL: process.env.SENDER_EMAIL!,
+  PASSKEY: process.env.PASSKEY!,
+  REDIS_URL: process.env.REDIS_URL!,
+  NODE_ENV: process.env.NODE_ENV!,
+  RESET_PASS_URL: process.env.RESET_PASS_URL!,
+  AWS_REGION: process.env.AWS_REGION!,
+  S3_BUCKET_NAME: process.env.S3_BUCKET_NAME!,
+  AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID!,
+  AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY!,
+  ERROR_LOG_RETENTION_PERIOD: process.env.ERROR_LOG_RETENTION_PERIOD!,
+  START_INTERVAL: process.env.START_INTERVAL!,
+  END_INTERVAL: process.env.END_INTERVAL!,
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY!,
+  WEBHOOK_SECRET: process.env.WEBHOOK_SECRET!,
+  COOKIE_MAX_AGE: process.env.COOKIE_MAX_AGE!,
 };

@@ -1,4 +1,4 @@
-  import { Document, FilterQuery, Model, Types, UpdateQuery } from "mongoose";
+  import { Document, Model, Types, UpdateQuery } from "mongoose";
 //   import { IBaseRepository } from "../core/interface/repositories/IBase.repository";
 
   export abstract class BaseRepository<T extends Document>
@@ -11,10 +11,12 @@
     }
 
     async create(data: Partial<T>): Promise<T> {
-      return await this.model.create(data);
+      const doc = new this.model(data);
+      await doc.save();
+      return doc;
     }
 
-    async findAll(filter: FilterQuery<T> = {}): Promise<T[]> {
+    async findAll(filter: Record<string,unknown> = {}): Promise<T[]> {
       return this.model.find(filter);
     }
 
@@ -22,15 +24,15 @@
       return this.model.findByIdAndUpdate(id, data, { new: true });
     }
 
-    async findOne(filter: FilterQuery<T>): Promise<T | null> {
+    async findOne(filter: Record<string,unknown>): Promise<T | null> {
       return this.model.findOne(filter);
     }
 
-    async deleteOne(filter: FilterQuery<T>): Promise<void> {
+    async deleteOne(filter: Record<string,unknown>): Promise<void> {
       await this.model.deleteOne(filter);
     }
 
-    async countDocuments(filter: FilterQuery<T> = {}): Promise<number> {
+    async countDocuments(filter: Record<string,unknown> = {}): Promise<number> {
       return this.model.countDocuments(filter);
     }
   }

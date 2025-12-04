@@ -1,64 +1,102 @@
-import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
-import { env } from "@/config/env.config";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import logger from "./logger.utils";
+import { env } from '@/config/env.config';
+import logger from './logger.utils';
 
-
-// Configure AWS S3
-const s3Client = new S3Client({
-    region: env.AWS_REGION,
-    credentials: {
-        accessKeyId: env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: env.AWS_SECRET_ACCESS_KEY!,
-    },
-});
-
-
-/**
- * Uploads a file to S3 and returns its public URL
- */
-type FolderCategory = 'profile-photos' | 'certification-proofs' | 'resume' | 'community-posts';
-async function uploadToS3(file: Express.Multer.File, folder: FolderCategory): Promise<string> {
-  const fileExtension = file.originalname.split('.').pop();
-  const fileKey  = `${folder}/${uuidv4()}.${fileExtension}`;
-
-  const params = {
-    Bucket: env.S3_BUCKET_NAME!,
-    Key: fileKey ,
-    Body: file.buffer,
-    ContentType: file.mimetype,
-  };
-
-  await s3Client.send(new PutObjectCommand(params));
-
-  return fileKey;
-};
-
-/**
- * Generates a new signed URL for an existing S3 URL
- */
-async function generateSignedUrl(fileKey: string): Promise<string> {
-  const command = new GetObjectCommand({
-    Bucket: env.S3_BUCKET_NAME!,
-    Key: fileKey,
-  });
-
-  return getSignedUrl(s3Client, command, { expiresIn: 60 * 15 }); // 15 minutes
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. Proper Multer File type — NO GLOBAL EXPRESS BULLSHIT
+// ─────────────────────────────────────────────────────────────────────────────
+interface MulterFile {
+  /** Name of the file on the user's computer */
+  originalname: string;
+  /** Name of the file on the server (if saved) */
+  filename?: string;
+  /** Buffer of the entire file */
+  buffer: Buffer;
+  /** Size of the file in bytes */
+  size: number;
+  /** MIME type */
+  mimetype: string;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. S3 Client — singleton, properly typed
+// ─────────────────────────────────────────────────────────────────────────────
+const s3Client = new S3Client({
+  region: env.AWS_REGION,
+  credentials: {
+    accessKeyId: env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+  },
+});
 
-/**
- * Deletes a file from S3 by its key
- */
-async function deleteFromS3(fileKey: string): Promise<void> {
-  const command = new DeleteObjectCommand({
-    Bucket: env.S3_BUCKET_NAME!,
-    Key: fileKey,
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. Allowed folders — enforce at type level
+// ─────────────────────────────────────────────────────────────────────────────
+type S3Folder =
+  | 'profile-photos'
+  | 'certification-proofs'
+  | 'resume'
+  | 'community-posts';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. Core functions — bulletproof
+// ─────────────────────────────────────────────────────────────────────────────
+export async function uploadToS3(
+  file: MulterFile,
+  folder: S3Folder
+): Promise<{
+  key: string;
+  url: string;           // ← permanent public URL (if bucket is public)
+  signedUrl: string;     // ← temporary signed URL (always works)
+}> {
+  if (!file?.buffer) throw new Error('Invalid file: missing buffer');
+
+  const extension = file.originalname.split('.').pop()?.toLowerCase() ?? 'bin';
+  const key = `${folder}/${uuidv4()}.${extension}`;
+
+  const command = new PutObjectCommand({
+    Bucket: env.S3_BUCKET_NAME,
+    Key: key,
+    Body: file.buffer,
+    ContentType: file.mimetype,
+    // Optional: ACL: 'public-read' if your bucket allows it
   });
 
   await s3Client.send(command);
-  logger.info(`Deleted file: ${fileKey}`);
+
+  const permanentUrl = `https://${env.S3_BUCKET_NAME}.s3.${env.AWS_REGION}.amazonaws.com/${key}`;
+  const signedUrl = await generateSignedUrl(key, 60 * 60 * 24 * 7); // 7 days default
+
+  logger.info(`Uploaded to S3: ${key}`);
+
+  return { key, url: permanentUrl, signedUrl };
 }
 
-export { uploadToS3, generateSignedUrl, deleteFromS3 };
+export async function generateSignedUrl(
+  key: string,
+  expiresIn = 60 * 15 // default 15 mins
+): Promise<string> {
+  const command = new GetObjectCommand({
+    Bucket: env.S3_BUCKET_NAME,
+    Key: key,
+  });
+
+  return getSignedUrl(s3Client, command, { expiresIn });
+}
+
+export async function deleteFromS3(key: string): Promise<void> {
+  const command = new DeleteObjectCommand({
+    Bucket: env.S3_BUCKET_NAME,
+    Key: key,
+  });
+
+  await s3Client.send(command);
+  logger.info(`Deleted from S3: ${key}`);
+}

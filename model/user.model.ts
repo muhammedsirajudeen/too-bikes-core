@@ -25,11 +25,10 @@ const userSchema = new Schema<IUser>(
 );
 
 // Hash password before saving
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function () {
   if (this.isModified("password") && this.password) {
     this.password = await hashPassword(this.password as string);
   }
-  next();
 });
 
 // Indexes
