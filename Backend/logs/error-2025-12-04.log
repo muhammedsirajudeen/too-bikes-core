@@ -1,0 +1,14 @@
+2025-12-04 14:59:29 [[31merror[39m]: MongoServerError: error processing query: ns=TooBikesDB.storesTree: GEONEAR  field=location.coordinates maxdist=5000 isNearSphere=0
+Sort: {}
+Proj: {}
+ planner returned error :: caused by :: unable to find index for $geoNear query
+    at Connection.sendCommand (C:\Users\USER\node_modules\mongodb\src\cmap\connection.ts:545:17)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at Connection.command (C:\Users\USER\node_modules\mongodb\src\cmap\connection.ts:617:22)
+    at Server.command (C:\Users\USER\node_modules\mongodb\src\sdam\server.ts:337:21)
+    at FindOperation.execute (C:\Users\USER\node_modules\mongodb\src\operations\find.ts:130:12)
+    at tryOperation (C:\Users\USER\node_modules\mongodb\src\operations\execute_operation.ts:278:14)
+    at executeOperation (C:\Users\USER\node_modules\mongodb\src\operations\execute_operation.ts:112:12)
+    at FindCursor._initialize (C:\Users\USER\node_modules\mongodb\src\cursor\find_cursor.ts:90:22)
+    at FindCursor.cursorInit (C:\Users\USER\node_modules\mongodb\src\cursor\abstract_cursor.ts:896:21)
+    at FindCursor.fetchBatch (C:\Users\USER\node_modules\mongodb\src\cursor\abstract_cursor.ts:934:7)
