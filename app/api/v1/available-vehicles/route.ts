@@ -44,12 +44,14 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
     message: "Available vehicles retrieved successfully",
     data: vehicles,
     metadata: {
-      page: validated.data.page,
-      limit: validated.data.limit,
-      total,
-      totalPages: Math.ceil(total / validated.data.limit),
-      hasNext: validated.data.page * validated.data.limit < total,
-      hasPrev: validated.data.page > 1,
+      pagination:{
+        page: validated.data.page,
+        limit: validated.data.limit,
+        total,
+        totalPages: Math.ceil(total / validated.data.limit),
+        hasNext: validated.data.page * validated.data.limit < total,
+        hasPrev: validated.data.page > 1,
+      }
     },
   });
 });
