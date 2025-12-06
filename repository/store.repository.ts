@@ -7,15 +7,25 @@ export class StoreRepository extends BaseRepository<IStore> {
     super(StoreModel);
   }
 
-  async findStoresNear(longitude: number, latitude: number, radiusKm: number) {
+  async findStoresNear(
+    longitude: number, 
+    latitude: number, 
+    radiusKm: number
+  ): Promise<IStore[]> {
+    // India bounds validation (Northern hemisphere)
+    const isValidIndiaCoords = 
+      latitude >= 8.0 && latitude <= 37.0 &&
+      longitude >= 68.0 && longitude <= 97.5;
+
+    if (!isValidIndiaCoords) {
+      throw new Error('Coordinates must be within India');
+    }
+
     return StoreModel.find({
       "location.coordinates": {
-        $near: {
-          $geometry: {
-            type: "Point",
-            coordinates: [longitude, latitude]
-          },
-          $maxDistance: radiusKm * 1000  // convert km → meters
+        $nearSphere: {
+          $geometry: { type: "Point", coordinates: [longitude, latitude] },
+          $maxDistance: radiusKm * 1000
         }
       }
     });

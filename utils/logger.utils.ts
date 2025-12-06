@@ -16,16 +16,16 @@ const logger = createLogger({
     errors({ stack: true }),
     logFormat
   ),
-  transports: [
-    new transports.Console(),
-    new DailyRotateFile({
-      filename: 'logs/error-%DATE%.log',
-      datePattern: 'YYYY-MM-DD',
-      level: 'error',
-      maxFiles: env.ERROR_LOG_RETENTION_PERIOD,
-      zippedArchive: false,
-    }),
-  ],
+  // transports: [
+  //   new transports.Console(),
+  //   new DailyRotateFile({
+  //     filename: 'logs/error-%DATE%.log',
+  //     datePattern: 'YYYY-MM-DD',
+  //     level: 'error',
+  //     maxFiles: env.ERROR_LOG_RETENTION_PERIOD,
+  //     zippedArchive: false,
+  //   }),
+  // ],
 });
 
 export default logger;

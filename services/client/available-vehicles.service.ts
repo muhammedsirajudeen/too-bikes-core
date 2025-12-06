@@ -11,40 +11,19 @@ export class AvailableVehiclesService {
     latitude: number,
     longitude: number,
     radiusKm: number,
-    startTime: Date,
-    endTime: Date
+    startTime: Date,  // ISO8601 parsed
+    endTime: Date,    // ISO8601 parsed
+    page: number,
+    limit: number
   ) {
-    // 1️⃣ Find nearby stores using geospatial query
-    const nearbyStores = await this.storeRepo.findStoresNear(
-      longitude,
-      latitude,
-      radiusKm
-    );
+    const nearbyStores = await this.storeRepo.findStoresNear(longitude, latitude, radiusKm);
+    
+    if (nearbyStores.length === 0) return { vehicles: [], total: 0 };
 
-    const storeIds = nearbyStores.map((s) => s._id);
-
-    if (storeIds.length === 0) return [];
-
-    // 2️⃣ Find vehicles from those stores
-    const vehicles = await this.vehicleRepo.findAll({
-      store: { $in: storeIds },
-      availability: true,
-      isActive: true,
-    });
-
-    const availableVehicles = [];
-
-    // 3️⃣ Filter vehicles that are not already booked
-    for (const vehicle of vehicles) {
-      const isAvailable = await this.vehicleRepo.isVehicleAvailable(
-        vehicle._id.toString(),
-        startTime,
-        endTime
-      );
-
-      if (isAvailable) availableVehicles.push(vehicle);
-    }
-
-    return availableVehicles;
+    const storeIds = nearbyStores.map(s => s._id);
+    
+    return this.vehicleRepo.findAvailableVehiclesByStores(storeIds, startTime, endTime, page, limit);
   }
+
+
 }
