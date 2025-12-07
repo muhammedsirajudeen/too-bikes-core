@@ -16,13 +16,18 @@ export class AvailableVehiclesService {
     page: number,
     limit: number
   ) {
-    const nearbyStores = await this.storeRepo.findStoresNear(longitude, latitude, radiusKm);
-    
-    if (nearbyStores.length === 0) return { vehicles: [], total: 0 };
+    try {
+      const nearbyStores = await this.storeRepo.findStoresNear(longitude, latitude, radiusKm);
+      
+      if (nearbyStores.length === 0) return { vehicles: [], total: 0 };
 
-    const storeIds = nearbyStores.map(s => s._id);
-    
-    return this.vehicleRepo.findAvailableVehiclesByStores(storeIds, startTime, endTime, page, limit);
+      const storeIds = nearbyStores.map(s => s._id);
+      
+      return this.vehicleRepo.findAvailableVehiclesByStores(storeIds, startTime, endTime, page, limit);
+    } catch (error) {
+      // Re-throw with more context
+      throw new Error(`Failed to find available vehicles: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
 

@@ -2,19 +2,52 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ installed
+- MongoDB database (local or cloud)
+
+### Environment Setup
+
+1. **Create a `.env.local` file** in the root directory:
+
+```bash
+cp .env.local.example .env.local
+```
+
+2. **Configure your environment variables** in `.env.local`:
+
+The most important variable is `MONGO_URI`. Update it with your MongoDB connection string:
+
+```env
+MONGO_URI=mongodb://localhost:27017/too-bikes
+# or for MongoDB Atlas:
+# MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/too-bikes
+```
+
+For other variables, see `.env.local.example` for reference. Minimum required:
+- `MONGO_URI` - MongoDB connection string (required)
+- `JWT_ACCESS_SECRET` - Random secret string for JWT tokens
+- `JWT_REFRESH_SECRET` - Random secret string for refresh tokens
+
+### Installation
+
+```bash
+npm install
+```
+
+### Running the Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The server will start on [http://localhost:3001](http://localhost:3001)
+
+**Note:** If you see MongoDB connection errors, make sure:
+1. MongoDB is running (if using local MongoDB)
+2. `MONGO_URI` is correctly set in `.env.local`
+3. The connection string is valid
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

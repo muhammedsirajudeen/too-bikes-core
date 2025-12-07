@@ -15,6 +15,23 @@ export default function LandingPage() {
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
+  // Pickup state
+  const [pickupDate, setPickupDate] = useState<Date | null>(null);
+  const [pickupTime, setPickupTime] = useState<string | null>(null);
+  
+  // Dropoff state
+  const [dropoffDate, setDropoffDate] = useState<Date | null>(null);
+  const [dropoffTime, setDropoffTime] = useState<string | null>(null);
+
+  // Validation errors
+  const [pickupError, setPickupError] = useState<string>("");
+  const [dropoffError, setDropoffError] = useState<string>("");
+  const [locationError, setLocationError] = useState<string>("");
+
+  // Location state
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
@@ -22,8 +39,110 @@ export default function LandingPage() {
 
   if (!mounted) return null;
 
-  const navHandler = () => {
-    router.push(ROUTE_CONSTANTS.HOME);
+  const getLocation = async (): Promise<{ lat: number; lng: number } | null> => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser");
+      return null;
+    }
+
+    setIsRequestingLocation(true);
+    setLocationError("");
+
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          setLocation({ lat, lng });
+          setIsRequestingLocation(false);
+          resolve({ lat, lng });
+        },
+        (error) => {
+          setIsRequestingLocation(false);
+          let errorMsg = "Unable to get your location";
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMsg = "Location permission denied. Please enter location manually.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMsg = "Location information unavailable.";
+              break;
+            case error.TIMEOUT:
+              errorMsg = "Location request timed out.";
+              break;
+          }
+          setLocationError(errorMsg);
+          resolve(null);
+        }
+      );
+    });
+  };
+
+  const validateAndNavigate = async () => {
+    // Reset errors
+    setPickupError("");
+    setDropoffError("");
+    setLocationError("");
+
+    let isValid = true;
+
+    // Validate pickup
+    if (!pickupDate || !pickupTime) {
+      setPickupError("Please select both pickup date and time");
+      isValid = false;
+    }
+
+    // Validate dropoff
+    if (!dropoffDate || !dropoffTime) {
+      setDropoffError("Please select both dropoff date and time");
+      isValid = false;
+    }
+
+    if (!isValid) return;
+
+    // Validate dropoff is after pickup
+    // At this point, we know pickupDate and dropoffDate are not null due to validation above
+    const pickupDateTime = new Date(pickupDate!);
+    const [pickupHour, pickupMinute] = pickupTime!.split(":").map(Number);
+    pickupDateTime.setHours(pickupHour, pickupMinute, 0, 0);
+
+    const dropoffDateTime = new Date(dropoffDate!);
+    const [dropoffHour, dropoffMinute] = dropoffTime!.split(":").map(Number);
+    dropoffDateTime.setHours(dropoffHour, dropoffMinute, 0, 0);
+
+    if (dropoffDateTime <= pickupDateTime) {
+      setDropoffError("Drop-off time must be later than pickup time");
+      isValid = false;
+    }
+
+    if (!isValid) return;
+
+    // Get location
+    let finalLocation = location;
+    if (!finalLocation) {
+      finalLocation = await getLocation();
+    }
+
+    // If location is still null, show error but allow manual entry
+    // For now, we'll use a default location or show error
+    if (!finalLocation) {
+      setLocationError("Location is required. Please allow location access or enter manually.");
+      return;
+    }
+
+    // Build query params
+    const params = new URLSearchParams({
+      startTime: pickupDateTime.toISOString(),
+      endTime: dropoffDateTime.toISOString(),
+      latitude: finalLocation.lat.toString(),
+      longitude: finalLocation.lng.toString(),
+      radiusKm: "50", // Default radius
+      page: "1",
+      limit: "10"
+    });
+
+    // Navigate to vehicle listing page
+    router.push(`${ROUTE_CONSTANTS.HOME}?${params.toString()}`);
   };
 
   return (
@@ -59,16 +178,35 @@ export default function LandingPage() {
       </h2>
 
       <h4 className="font-light m-3 mt-10">Select your pick time</h4>
-      <PickupSelector pickup={true} />
+      <PickupSelector 
+        pickup={true} 
+        date={pickupDate}
+        time={pickupTime}
+        onDateChange={setPickupDate}
+        onTimeChange={setPickupTime}
+        error={pickupError}
+      />
 
       <h4 className="font-light m-3">Select your dropoff time</h4>
-      <PickupSelector pickup={false} />
+      <PickupSelector 
+        pickup={false} 
+        date={dropoffDate}
+        time={dropoffTime}
+        onDateChange={setDropoffDate}
+        onTimeChange={setDropoffTime}
+        error={dropoffError}
+      />
+
+      {locationError && (
+        <p className="text-red-500 text-sm mt-2 px-2">{locationError}</p>
+      )}
 
       <Button
-        onClick={navHandler}
-        className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] mt-24 text-black font-semibold text-lg"
+        onClick={validateAndNavigate}
+        disabled={isRequestingLocation}
+        className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] mt-24 text-black font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Let&apos;s Drive
+        {isRequestingLocation ? "Getting location..." : "Let's Drive"}
       </Button>
     </CardContent>
   </Card>

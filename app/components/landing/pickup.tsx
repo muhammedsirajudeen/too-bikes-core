@@ -7,22 +7,31 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
-export default function PickupSelector({ pickup }: { pickup: boolean }) {
-  const [date, setDate] = useState<Date | null>(null);
-  const [time, setTime] = useState<string | null>(null);
+interface PickupSelectorProps {
+  pickup: boolean;
+  date: Date | null;
+  time: string | null;
+  onDateChange: (date: Date | null) => void;
+  onTimeChange: (time: string | null) => void;
+  error?: string;
+}
 
+export default function PickupSelector({ pickup, date, time, onDateChange, onTimeChange, error }: PickupSelectorProps) {
   // control both popovers
   const [openDate, setOpenDate] = useState(false);
   const [openTime, setOpenTime] = useState(false);
 
   return (
-    <div className="w-full flex justify-center">
+    <div className="w-full flex flex-col">
       <div
-        className="
-          flex items-center gap-3 md:gap-8 px-6 py-4 rounded-full
-          bg-white shadow-md border border-gray-200 w-full
-          dark:bg-[#191B27] dark:border-gray-700
-        "
+        className={cn(
+          "flex items-center gap-3 md:gap-8 px-6 py-4 rounded-full",
+          "bg-white shadow-md border w-full",
+          "dark:bg-[#191B27]",
+          error
+            ? "border-red-500 dark:border-red-500"
+            : "border-gray-200 dark:border-gray-700"
+        )}
       >
         {/* DATE PICKER */}
         <Popover open={openDate} onOpenChange={setOpenDate}>
@@ -44,7 +53,7 @@ export default function PickupSelector({ pickup }: { pickup: boolean }) {
               selected={date ?? undefined}
               onSelect={(d) => {
                 if (!d) return;
-                setDate(d);
+                onDateChange(d);
                 setOpenDate(false); // 🔥 CLOSE POPUP
               }}
               className="dark:bg-[#191B27] dark:text-white"
@@ -78,7 +87,7 @@ export default function PickupSelector({ pickup }: { pickup: boolean }) {
                 <button
                   key={t}
                   onClick={() => {
-                    setTime(t);
+                    onTimeChange(t);
                     setOpenTime(false); // 🔥 CLOSE POPUP
                   }}
                   className={cn(
@@ -95,6 +104,9 @@ export default function PickupSelector({ pickup }: { pickup: boolean }) {
           </PopoverContent>
         </Popover>
       </div>
+      {error && (
+        <p className="text-red-500 text-sm mt-2 px-2">{error}</p>
+      )}
     </div>
   );
 }

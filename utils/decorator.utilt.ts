@@ -10,7 +10,30 @@ export function withLoggingAndErrorHandling(
     console.log(`[Request] ${request.method} ${request.url}`);
 
     if (mongoose.connection.readyState === 0) {
-      await connectDb();
+      try {
+        await connectDb();
+      } catch (dbError) {
+        // If DB connection fails, return error response instead of crashing
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Database connection failed. Please check your MONGO_URI environment variable.",
+            error: dbError instanceof Error ? dbError.message : String(dbError),
+          },
+          { status: 503 }
+        );
+      }
+    }
+
+    // Check if MongoDB is actually connected
+    if (mongoose.connection.readyState !== 1) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Database is not connected. Please check your MONGO_URI environment variable.",
+        },
+        { status: 503 }
+      );
     }
 
     try {

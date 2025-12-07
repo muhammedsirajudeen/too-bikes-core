@@ -9,28 +9,325 @@ import {
     SlidersHorizontal,
     Calendar,
     MapPin,
+    ChevronLeft,
+    ChevronRight,
+    Loader2,
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import Navbar from "./(components)/navbar";
-import { DrawerContent } from "@/components/ui/drawer";
-import { useState } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import ComingSoonDrawer from "./(components)/drawer";
+import { useSearchParams } from "next/navigation";
+import PickupSelector from "@/app/components/landing/pickup";
+import { format } from "date-fns";
+import axiosInstance from "@/lib/axios";
+import { AxiosError } from "axios";
 
-export default function HomePageContent() {
-    const [open,setOpen]=useState(false)
-    const handleClose=(status:boolean)=>{
-        setOpen(status)
-    }
+interface Vehicle {
+  _id: string;
+  store: string;
+  name: string;
+  brand: string;
+  fuelType: "petrol" | "electric" | "diesel";
+  pricePerHour: number;
+  licensePlate: string;
+  image: string[];
+  availability: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+interface VehicleResponse {
+  success: boolean;
+  message: string;
+  data: Vehicle[];
+  metadata: {
+    pagination: Pagination;
+  };
+  error?: Array<{ message?: string; path?: string[] }>;
+}
+
+function HomePageContentInner() {
+    const [open, setOpen] = useState(false);
+    const handleClose = (status: boolean) => {
+        setOpen(status);
+    };
+
+    const searchParams = useSearchParams();
+
+    // State from URL params
+    const [startTime, setStartTime] = useState<string>("");
+    const [endTime, setEndTime] = useState<string>("");
+    const [latitude, setLatitude] = useState<string>("");
+    const [longitude, setLongitude] = useState<string>("");
+    const [radiusKm, setRadiusKm] = useState<string>("50");
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const limit = 10;
+
+    // Filter state (for editing)
+    const [pickupDate, setPickupDate] = useState<Date | null>(null);
+    const [pickupTime, setPickupTime] = useState<string | null>(null);
+    const [dropoffDate, setDropoffDate] = useState<Date | null>(null);
+    const [dropoffTime, setDropoffTime] = useState<string | null>(null);
+    const [showFilters, setShowFilters] = useState(false);
+
+    // Data state
+    const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+    const [pagination, setPagination] = useState<Pagination | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>("");
+
+    // Initialize from URL params
+    useEffect(() => {
+        const startTimeParam = searchParams.get("startTime");
+        const endTimeParam = searchParams.get("endTime");
+        const latParam = searchParams.get("latitude");
+        const lngParam = searchParams.get("longitude");
+        const radiusParam = searchParams.get("radiusKm");
+        const pageParam = searchParams.get("page");
+
+        if (startTimeParam && endTimeParam && latParam && lngParam) {
+            setStartTime(startTimeParam);
+            setEndTime(endTimeParam);
+            setLatitude(latParam);
+            setLongitude(lngParam);
+            setRadiusKm(radiusParam || "50");
+            setCurrentPage(parseInt(pageParam || "1"));
+
+            // Parse dates for filter display
+            const start = new Date(startTimeParam);
+            const end = new Date(endTimeParam);
+            setPickupDate(start);
+            setDropoffDate(end);
+            setPickupTime(format(start, "HH:mm"));
+            setDropoffTime(format(end, "HH:mm"));
+        } else {
+            setError("Missing required parameters. Please start from the landing page.");
+            setLoading(false);
+        }
+    }, [searchParams]);
+
+    // Fetch vehicles using axios with proper error handling
+    const fetchVehicles = useCallback(async () => {
+        if (!startTime || !endTime || !latitude || !longitude) {
+            return;
+        }
+
+        setLoading(true);
+        setError("");
+
+        try {
+            const params = {
+                startTime,
+                endTime,
+                latitude,
+                longitude,
+                radiusKm,
+                page: currentPage.toString(),
+                limit: limit.toString(),
+            };
+
+            const response = await axiosInstance.get<VehicleResponse>('/api/v1/available-vehicles', {
+                params,
+            });
+
+            const data = response.data;
+
+            // Check if response indicates success
+            if (!data.success) {
+                // Handle validation errors
+                if (data.error && Array.isArray(data.error)) {
+                    const errorMessages = data.error.map((err: any) => err.message || err.path?.join('.')).join(', ');
+                    setError(`Validation error: ${errorMessages}`);
+                } else {
+                    setError(data.message || "Failed to fetch vehicles. Please try again.");
+                }
+                setVehicles([]);
+                setPagination(null);
+                setLoading(false);
+                return;
+            }
+
+            // Handle empty data
+            if (!data.data || !Array.isArray(data.data)) {
+                setVehicles([]);
+                setPagination(null);
+                setError("No vehicles data received from server.");
+                setLoading(false);
+                return;
+            }
+
+            setVehicles(data.data);
+            setPagination(data.metadata?.pagination || null);
+            setError(""); // Clear any previous errors
+        } catch (err) {
+            // Handle axios errors
+            const axiosError = err as AxiosError<{
+                message?: string;
+                error?: Array<{ message?: string; path?: string[] }>;
+            }>;
+
+            let errorMessage = "An error occurred while fetching vehicles. Please try again.";
+
+            if (axiosError.response) {
+                // Server responded with error status
+                const status = axiosError.response.status;
+                const errorData = axiosError.response.data;
+
+                if (errorData?.error && Array.isArray(errorData.error)) {
+                    // Validation errors
+                    const errorMessages = errorData.error
+                        .map((err) => err.message || err.path?.join('.'))
+                        .join(', ');
+                    errorMessage = `Validation error: ${errorMessages}`;
+                } else if (errorData?.message) {
+                    // Server error message
+                    errorMessage = errorData.message;
+                } else if (status === 503) {
+                    // Service unavailable (e.g., database connection issue)
+                    errorMessage = "Service temporarily unavailable. Please try again later.";
+                } else if (status >= 500) {
+                    // Server errors
+                    errorMessage = `Server error (${status}). Please try again later.`;
+                } else if (status === 404) {
+                    errorMessage = "API endpoint not found.";
+                } else if (status === 400) {
+                    errorMessage = "Invalid request parameters.";
+                }
+            } else if (axiosError.request) {
+                // Request was made but no response received
+                errorMessage = "Network error. Please check your connection and try again.";
+            } else if (axiosError.message) {
+                // Error setting up the request
+                errorMessage = axiosError.message;
+            }
+
+            setError(errorMessage);
+            console.error("Axios error:", axiosError);
+            setVehicles([]);
+            setPagination(null);
+        } finally {
+            setLoading(false);
+        }
+    }, [startTime, endTime, latitude, longitude, radiusKm, currentPage]);
+
+    useEffect(() => {
+        fetchVehicles();
+    }, [fetchVehicles]);
+
+    const updateFilters = () => {
+        if (!pickupDate || !pickupTime || !dropoffDate || !dropoffTime) {
+            return;
+        }
+
+        const pickupDateTime = new Date(pickupDate);
+        const [pickupHour, pickupMinute] = pickupTime.split(":").map(Number);
+        pickupDateTime.setHours(pickupHour, pickupMinute, 0, 0);
+
+        const dropoffDateTime = new Date(dropoffDate);
+        const [dropoffHour, dropoffMinute] = dropoffTime.split(":").map(Number);
+        dropoffDateTime.setHours(dropoffHour, dropoffMinute, 0, 0);
+
+        if (dropoffDateTime <= pickupDateTime) {
+            setError("Drop-off time must be later than pickup time");
+            return;
+        }
+
+        // Update state directly - this will trigger fetchVehicles automatically
+        setStartTime(pickupDateTime.toISOString());
+        setEndTime(dropoffDateTime.toISOString());
+        setCurrentPage(1); // Reset to first page when filters change
+
+        // Update URL for bookmarking/sharing (without triggering navigation)
+        const params = new URLSearchParams({
+            startTime: pickupDateTime.toISOString(),
+            endTime: dropoffDateTime.toISOString(),
+            latitude,
+            longitude,
+            radiusKm,
+            page: "1",
+            limit: limit.toString(),
+        });
+        window.history.replaceState({}, '', `/home?${params.toString()}`);
+        
+        setShowFilters(false);
+    };
+
+    const updateLocation = async () => {
+        if (!navigator.geolocation) {
+            setError("Geolocation is not supported by your browser");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude.toString();
+                const lng = position.coords.longitude.toString();
+                
+                // Update state directly - this will trigger fetchVehicles automatically
+                setLatitude(lat);
+                setLongitude(lng);
+                setCurrentPage(1); // Reset to first page when location changes
+
+                // Update URL for bookmarking/sharing (without triggering navigation)
+                const params = new URLSearchParams({
+                    startTime,
+                    endTime,
+                    latitude: lat,
+                    longitude: lng,
+                    radiusKm,
+                    page: "1",
+                    limit: limit.toString(),
+                });
+                window.history.replaceState({}, '', `/home?${params.toString()}`);
+            },
+            (error) => {
+                setError("Unable to get your location");
+            }
+        );
+    };
+
+    const changePage = (newPage: number) => {
+        // Update state directly - this will trigger fetchVehicles automatically
+        setCurrentPage(newPage);
+
+        // Update URL for bookmarking/sharing (without triggering navigation)
+        const params = new URLSearchParams({
+            startTime,
+            endTime,
+            latitude,
+            longitude,
+            radiusKm,
+            page: newPage.toString(),
+            limit: limit.toString(),
+        });
+        window.history.replaceState({}, '', `/home?${params.toString()}`);
+    };
+
+    const formatDateTime = (isoString: string) => {
+        const date = new Date(isoString);
+        return format(date, "MMM dd, yyyy 'at' HH:mm");
+    };
+
     return (
-        <div onClick={()=>{
-            setOpen(true)
-        }} className="min-h-screen w-full bg-white dark:bg-[#0B0A1B] text-black dark:text-white pb-24">
+        <div className="min-h-screen w-full bg-white dark:bg-[#0B0A1B] text-black dark:text-white pb-24">
 
             {/* Top Banner */}
             <div className="w-full rounded-b-3xl bg-[#FDCB67] p-6 pt-10 relative overflow-hidden">
-                <h1 className="text-3xl font-semibold">Good Morning</h1>
+                <h1 className="text-3xl font-semibold">Available Vehicles</h1>
                 <p className="text-gray-800 text-sm mt-1">Find your best ride here</p>
 
                 {/* Banner Illustration */}
@@ -40,98 +337,237 @@ export default function HomePageContent() {
                     width={180}
                     height={180}
                     className="absolute right-4 bottom-4"
+                    style={{ height: "auto" }}
                 />
 
                 {/* Search Row */}
                 <div className="flex items-center gap-2 mt-8 relative z-10">
-                    <div className="flex-1 rounded-full bg-white shadow-md py-3 px-4 flex items-center gap-2">
+                    <button
+                        onClick={updateLocation}
+                        className="flex-1 rounded-full bg-white shadow-md py-3 px-4 flex items-center gap-2"
+                    >
                         <MapPin size={18} className="text-gray-400 flex-shrink-0" />
-                        <span className="text-gray-700 text-sm font-medium">Kannur</span>
-                    </div>
+                        <span className="text-gray-700 text-sm font-medium truncate">
+                            {latitude && longitude ? `${parseFloat(latitude).toFixed(4)}, ${parseFloat(longitude).toFixed(4)}` : "Update location"}
+                        </span>
+                    </button>
 
-                    <div className="flex-1 rounded-full bg-white shadow-md py-3 px-4 flex items-center gap-2">
+                    <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="flex-1 rounded-full bg-white shadow-md py-3 px-4 flex items-center gap-2"
+                    >
                         <Calendar size={18} className="text-gray-400 flex-shrink-0" />
-                        <span className="text-gray-700 text-sm font-medium">Pickup date</span>
-                    </div>
+                        <span className="text-gray-700 text-sm font-medium truncate">
+                            {startTime ? formatDateTime(startTime) : "Pickup date"}
+                        </span>
+                    </button>
 
-                    <button className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center flex-shrink-0">
+                    <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center flex-shrink-0"
+                    >
                         <SlidersHorizontal className="w-5 h-5 text-gray-700" />
                     </button>
                 </div>
             </div>
 
+            {/* Filter Drawer */}
+            {showFilters && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setShowFilters(false)}>
+                    <div className="w-full bg-white dark:bg-[#191B27] rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="text-xl font-semibold mb-4">Update Filters</h3>
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="font-light mb-2">Pickup Date & Time</h4>
+                                <PickupSelector
+                                    pickup={true}
+                                    date={pickupDate}
+                                    time={pickupTime}
+                                    onDateChange={setPickupDate}
+                                    onTimeChange={setPickupTime}
+                                />
+                            </div>
+
+                            <div>
+                                <h4 className="font-light mb-2">Dropoff Date & Time</h4>
+                                <PickupSelector
+                                    pickup={false}
+                                    date={dropoffDate}
+                                    time={dropoffTime}
+                                    onDateChange={setDropoffDate}
+                                    onTimeChange={setDropoffTime}
+                                />
+                            </div>
+
+                            <Button
+                                onClick={updateFilters}
+                                className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] text-black font-semibold text-lg"
+                            >
+                                Apply Filters
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Vehicles Section */}
             <div className="px-4 mt-5">
                 <h2 className="text-lg font-semibold">Available vehicles</h2>
 
-                {/* Card 1 */}
-                <Card className="mt-4 rounded-xl border shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
-                    <CardContent className="flex items-center gap-4 p-4">
-                        <Image
-                            src="/bike.png"
-                            alt="bike"
-                            width={155}
-                            height={100}
-                            className="object-contain"
-                        />
+                {/* Skeleton Loading State */}
+                {loading && (
+                    <div className="mt-4 space-y-4">
+                        {[...Array(3)].map((_, index) => (
+                            <Card
+                                key={`skeleton-${index}`}
+                                className="rounded-xl border shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
+                            >
+                                <CardContent className="flex items-center gap-4 p-4">
+                                    {/* Image Skeleton */}
+                                    <div className="w-[155px] h-[100px] bg-gray-200 dark:bg-gray-700 rounded-lg skeleton" />
 
-                        <div className="flex-1">
-                            <h3 className="font-semibold leading-tight">
-                                Royal Enfield Hunter 350
-                            </h3>
-                            <p className="text-[#FF6B00] font-semibold mt-1">₹ 1400</p>
-                            <p className="text-sm text-gray-500">₹ 700/day</p>
+                                    {/* Content Skeleton */}
+                                    <div className="flex-1 space-y-2">
+                                        {/* Title Skeleton */}
+                                        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 skeleton" />
+                                        
+                                        {/* Price Skeleton */}
+                                        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3 skeleton" />
+                                        
+                                        {/* Badge and License Plate Skeleton */}
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full w-16 skeleton" />
+                                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 skeleton" />
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+
+                {/* Error State */}
+                {error && !loading && (
+                    <div className="mt-4 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                        <p className="text-red-600 dark:text-red-400">{error}</p>
+                    </div>
+                )}
+
+                {/* Empty State */}
+                {!loading && !error && vehicles.length === 0 && (
+                    <div className="mt-8 text-center py-12">
+                        <div className="flex flex-col items-center justify-center">
+                            <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+                                <MapPin className="w-12 h-12 text-gray-400" />
+                            </div>
+                            <p className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                No vehicles found
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 max-w-md">
+                                No vehicles are available for the selected dates and location.
+                            </p>
+                            <div className="flex flex-col gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                <p>Try:</p>
+                                <ul className="list-disc list-inside space-y-1 text-left">
+                                    <li>Adjusting your pickup or dropoff dates</li>
+                                    <li>Updating your location</li>
+                                    <li>Increasing the search radius</li>
+                                </ul>
+                            </div>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                )}
 
-                {/* Card 2 (Highlighted with bold border) */}
-                <Card className="mt-4 rounded-xl border-2  shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
-                    <CardContent className="flex items-center gap-4 p-4">
-                        <Image
-                            src="/bike.png"
-                            alt="bike"
-                            width={155}
-                            height={100}
-                            className="object-contain"
-                        />
+                {/* Vehicle Cards */}
+                {!loading && !error && vehicles.length > 0 && (
+                    <>
+                        {vehicles.map((vehicle, index) => (
+                            <Card
+                                key={vehicle._id}
+                                className={`mt-4 rounded-xl border shadow-[0_2px_8px_rgba(0,0,0,0.08)] ${
+                                    index === 0 ? "border-2" : ""
+                                }`}
+                            >
+                                <CardContent className="flex items-center gap-4 p-4">
+                                    <Image
+                                        src={vehicle.image && vehicle.image.length > 0 ? vehicle.image[0] : "/bike.png"}
+                                        alt={vehicle.name}
+                                        width={155}
+                                        height={100}
+                                        className="object-contain"
+                                    />
 
-                        <div className="flex-1">
-                            <h3 className="font-semibold leading-tight">
-                                Royal Enfield Hunter 350
-                            </h3>
-                            <p className="text-[#FF6B00] font-semibold mt-1">₹ 1400</p>
-                            <p className="text-sm text-gray-500">₹ 700/day</p>
-                        </div>
-                    </CardContent>
-                </Card>
+                                    <div className="flex-1">
+                                        <h3 className="font-semibold leading-tight">
+                                            {vehicle.brand} {vehicle.name}
+                                        </h3>
+                                        <p className="text-[#FF6B00] font-semibold mt-1">
+                                            ₹ {vehicle.pricePerHour}/hour
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <Badge variant="outline" className="text-xs">
+                                                {vehicle.fuelType}
+                                            </Badge>
+                                            <span className="text-xs text-gray-500">
+                                                {vehicle.licensePlate}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
 
-                {/* Card 3 With Badge */}
-                <Card className="mt-4 rounded-xl border relative shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
-                    <Badge className="absolute right-4 top-4 bg-red-500 text-white">
-                        Most popular
-                    </Badge>
+                        {/* Pagination */}
+                        {pagination && pagination.totalPages > 1 && (
+                            <div className="flex items-center justify-center gap-4 mt-6 mb-4">
+                                <Button
+                                    onClick={() => changePage(currentPage - 1)}
+                                    disabled={!pagination.hasPrev}
+                                    className="rounded-full"
+                                    variant="outline"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </Button>
 
-                    <CardContent className="flex items-center gap-4 p-4">
-                        <Image
-                            src="/bike.png"
-                            alt="scooter"
-                            width={155}
-                            height={100}
-                            className="object-contain"
-                        />
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                    Page {pagination.page} of {pagination.totalPages}
+                                </span>
 
-                        <div className="flex-1">
-                            <h3 className="font-semibold leading-tight">River Indie</h3>
-                            <p className="text-[#FF6B00] font-semibold mt-1">₹ 1400</p>
-                            <p className="text-sm text-gray-500">₹ 700/day</p>
-                        </div>
-                    </CardContent>
-                </Card>
+                                <Button
+                                    onClick={() => changePage(currentPage + 1)}
+                                    disabled={!pagination.hasNext}
+                                    className="rounded-full"
+                                    variant="outline"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        )}
+                    </>
+                )}
             </div>
             <ComingSoonDrawer open={open} setOpen={handleClose}/>
             {/* Bottom Navigation */}
             <Navbar />
         </div>
+    );
+}
+
+
+/**
+ * @salman
+ * remove this suspense wrapper later
+ * @returns 
+ */
+export default function HomePageContent() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen w-full bg-white dark:bg-[#0B0A1B] flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-[#F4AA05]" />
+            </div>
+        }>
+            <HomePageContentInner />
+        </Suspense>
     );
 }

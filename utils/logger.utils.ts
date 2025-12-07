@@ -1,31 +1,52 @@
+// This file is server-only - winston is a Node.js library
 import { env } from '@/config/env.config';
-import { createLogger, format, transports } from 'winston';
-import DailyRotateFile from 'winston-daily-rotate-file';
 
-const { combine, timestamp, printf, colorize, errors } = format;
+// Use dynamic import to avoid client-side bundling
+let winstonLogger: any = null;
 
-const logFormat = printf(({ level, message, timestamp, stack }) => {
-  return `${timestamp} [${level}]: ${stack || message}`;
-});
+const createWinstonLogger = () => {
+  if (typeof window !== 'undefined') {
+    // Client-side fallback
+    return console;
+  }
 
-const logger = createLogger({
-  level: 'debug',
-  format: combine(
-    colorize(),
-    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    errors({ stack: true }),
-    logFormat
-  ),
-  // transports: [
-  //   new transports.Console(),
-  //   new DailyRotateFile({
-  //     filename: 'logs/error-%DATE%.log',
-  //     datePattern: 'YYYY-MM-DD',
-  //     level: 'error',
-  //     maxFiles: env.ERROR_LOG_RETENTION_PERIOD,
-  //     zippedArchive: false,
-  //   }),
-  // ],
-});
+  try {
+    const winston = require('winston');
+    const DailyRotateFile = require('winston-daily-rotate-file');
+    const { combine, timestamp, printf, colorize, errors } = winston.format;
 
-export default logger;
+    const logFormat = printf(({ level, message, timestamp, stack }: any) => {
+      return `${timestamp} [${level}]: ${stack || message}`;
+    });
+
+    return winston.createLogger({
+      level: 'debug',
+      format: combine(
+        colorize(),
+        timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+        errors({ stack: true }),
+        logFormat
+      ),
+      // transports: [
+      //   new winston.transports.Console(),
+      //   new DailyRotateFile({
+      //     filename: 'logs/error-%DATE%.log',
+      //     datePattern: 'YYYY-MM-DD',
+      //     level: 'error',
+      //     maxFiles: env.ERROR_LOG_RETENTION_PERIOD,
+      //     zippedArchive: false,
+      //   }),
+      // ],
+    });
+  } catch (error) {
+    // Fallback to console if winston fails to load
+    console.warn('Winston logger not available, using console fallback:', error);
+    return console;
+  }
+};
+
+if (!winstonLogger) {
+  winstonLogger = createWinstonLogger();
+}
+
+export default winstonLogger;
