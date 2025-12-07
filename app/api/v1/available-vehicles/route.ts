@@ -16,6 +16,39 @@ export const querySchema = z.object({
   message: "endTime must be after startTime",
   path: ["endTime"]
 });
+export interface VehicleResponse {
+  success: boolean;
+  message: string;
+  data: Vehicle[];
+  metadata: {
+    pagination: Pagination;
+  };
+}
+
+export interface Vehicle {
+  _id: string;
+  store: string;
+  name: string;
+  brand: string;
+  fuelType: "petrol" | "electric" | "diesel"; // narrowed based on provided data
+  pricePerHour: number;
+  licensePlate: string;
+  image: string[];
+  availability: boolean;
+  isActive: boolean;
+  createdAt: string; // can change to Date if needed
+  updatedAt: string; // can change to Date if needed
+}
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
 
 
 const availableVehiclesService = new AvailableVehiclesService();
