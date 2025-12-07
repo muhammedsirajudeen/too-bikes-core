@@ -1,5 +1,5 @@
 import { IVehicle } from "../core/interface/model/IVehicle.model";
-import { Schema, model } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 const vehicleSchema = new Schema<IVehicle>(
   {
@@ -29,4 +29,4 @@ const vehicleSchema = new Schema<IVehicle>(
   { timestamps: true }
 );
 
-export const VehicleModel = model<IVehicle>("Vehicle", vehicleSchema);
+export const VehicleModel = models.Vehicle || model<IVehicle>("Vehicle", vehicleSchema);

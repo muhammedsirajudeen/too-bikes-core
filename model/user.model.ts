@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, models } from "mongoose";
 import IUser from "../core/interface/model/IUser.model";
 import { hashPassword } from "@/utils";
 
@@ -35,4 +35,4 @@ userSchema.pre("save", async function () {
 userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 
-export const UserModel = model<IUser>("User", userSchema);
+export const UserModel = models.User || model<IUser>("User", userSchema);

@@ -1,5 +1,5 @@
 import { IStore } from "../core/interface/model/IStore.model";
-import { Schema, model } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 const storeSchema = new Schema<IStore>(
   {
@@ -33,4 +33,4 @@ const storeSchema = new Schema<IStore>(
 
 storeSchema.index({ "location.coordinates": "2dsphere" });
 
-export const StoreModel = model<IStore>("Store", storeSchema);
+export const StoreModel = models.Store || model<IStore>("Store", storeSchema);
