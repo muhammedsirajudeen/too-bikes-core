@@ -4,7 +4,7 @@ import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-export const querySchema = z.object({
+const querySchema = z.object({
   latitude: z.coerce.number().min(8.0).max(37.0),
   longitude: z.coerce.number().min(68.0).max(97.5),
   radiusKm: z.coerce.number().min(1).max(100),
@@ -16,6 +16,7 @@ export const querySchema = z.object({
   message: "endTime must be after startTime",
   path: ["endTime"]
 });
+
 export interface VehicleResponse {
   success: boolean;
   message: string;

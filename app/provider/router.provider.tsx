@@ -50,7 +50,9 @@ export default function RouterLoadingProvider({ children }: Props) {
             animationData={wheelAnimation}
             loop
             autoplay
-            style={{ width: 400, height: 400 }}
+            style={{ width: 400,
+                     height: 400,
+                      transform: "translateX(-80px)" }}
           />
         </div>
       )}
