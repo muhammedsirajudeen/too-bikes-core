@@ -32,7 +32,10 @@ axiosInstance.interceptors.response.use(
     if (error.response) {
       // Server responded with error status
       const status = error.response.status;
-      const data = error.response.data as any;
+      interface MessageInterface {
+        message: string
+      }
+      const data = error.response.data as MessageInterface;
 
       // Handle specific status codes
       if (status === 401) {
