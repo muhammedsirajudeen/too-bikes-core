@@ -19,11 +19,13 @@ export default function RouterLoadingProvider({ children }: Props) {
   const [mounted, setMounted] = useState(false);
 
   // Prevent theme mismatch on first render
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
   // Trigger loading on route change
   useEffect(() => {
     if (!mounted) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     const t = setTimeout(() => setLoading(false), 1200);
     return () => clearTimeout(t);
