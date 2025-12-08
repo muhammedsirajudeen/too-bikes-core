@@ -22,6 +22,12 @@ const availableVehiclesService = new AvailableVehiclesService();
 export const GET = withLoggingAndErrorHandling(
   async (request: NextRequest) => {
     const id = request.nextUrl.pathname.split('/').pop();
+    if(!id){
+      return NextResponse.json({
+        success: false,
+        message: "Vehicle ID is required",
+      }, { status: HttpStatus.BAD_REQUEST });
+    }
 
     const faqs = await faqService.getAllFaqs();
     const vehicle = await availableVehiclesService.findVehicleById(id!);
