@@ -46,7 +46,7 @@ export default function VehicleInfoCard({
   };
 
   return (
-    <div className="bg-white dark:bg-[#191B27] rounded-[30px] p-6 shadow-lg mx-4 -mt-8 relative z-10">
+    <div className="bg-white dark:bg-[#191B27] rounded-[30px] p-6 shadow-lg mx-4 -mt-4 relative z-10">
       {/* Brand Name */}
       <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-1">
         {brand}
@@ -80,7 +80,7 @@ export default function VehicleInfoCard({
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 ml-auto">
           {getFuelIcon()}
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
             {getFuelLabel()}

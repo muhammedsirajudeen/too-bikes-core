@@ -14,6 +14,21 @@ const nextConfig: NextConfig = {
   // Add empty turbopack config to silence the warning
   // We're using webpack for winston externals support
   turbopack: {},
+  // Configure image domains for external images
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'purepng.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.purepng.com',
+        pathname: '/**',
+      },
+    ],
+  },
 };
 
 export default nextConfig;

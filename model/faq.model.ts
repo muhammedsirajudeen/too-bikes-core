@@ -1,7 +1,7 @@
 import { IFAQ } from "@/core/interface/model/IFaq.model";
-import mongoose, { Schema } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
-const FAQSchema: Schema = new Schema(
+const FAQSchema = new Schema<IFAQ>(
   {
     question: { type: String, required: true },
     answer: { type: String, required: true },
@@ -11,4 +11,4 @@ const FAQSchema: Schema = new Schema(
   { timestamps: true }
 );
 
-export const FAQModel = mongoose.models.FAQ || mongoose.model<IFAQ>("FAQS", FAQSchema);
+export const FAQModel = models.FAQ || model<IFAQ>("FAQ", FAQSchema);

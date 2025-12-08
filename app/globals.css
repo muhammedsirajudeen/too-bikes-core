@@ -201,3 +201,13 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Hide scrollbar for image slider */
+.overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
+
+.overflow-x-auto {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

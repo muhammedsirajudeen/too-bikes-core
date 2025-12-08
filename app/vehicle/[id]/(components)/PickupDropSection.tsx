@@ -1,7 +1,6 @@
 "use client";
 
 import PickupDropCard from "./PickupDropCard";
-import VerticalTimeline from "./VerticalTimeline";
 
 interface PickupDropSectionProps {
   pickupDate: Date | string;
@@ -26,29 +25,37 @@ export default function PickupDropSection({
         Pickup & Drop details
       </h2>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col gap-4">
         {/* Pickup Card */}
-        <div className="flex-1">
-          <PickupDropCard
-            type="pickup"
-            date={pickupDate}
-            time={pickupTime}
-            location={pickupLocation}
-          />
-        </div>
+        <PickupDropCard
+          type="pickup"
+          date={pickupDate}
+          time={pickupTime}
+          location={pickupLocation}
+        />
 
-        {/* Vertical Timeline */}
-        <VerticalTimeline className="h-full min-h-[200px] my-2" />
+        {/* Vertical Timeline - Horizontal line between cards */}
+        <div className="flex items-center justify-center my-2">
+          <div className="flex items-center w-full">
+            <div className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
+            <div 
+              className="flex-1 h-0.5 mx-2"
+              style={{
+                background: "repeating-linear-gradient(to right, #10b981 0px, #10b981 4px, transparent 4px, transparent 8px)",
+                backgroundSize: "8px 2px"
+              }}
+            />
+            <div className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0" />
+          </div>
+        </div>
 
         {/* Drop Card */}
-        <div className="flex-1">
-          <PickupDropCard
-            type="drop"
-            date={dropDate}
-            time={dropTime}
-            location={dropLocation}
-          />
-        </div>
+        <PickupDropCard
+          type="drop"
+          date={dropDate}
+          time={dropTime}
+          location={dropLocation}
+        />
       </div>
     </div>
   );

@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import Navbar from "./(components)/navbar";
 import { useState, useEffect, useCallback, Suspense } from "react";
 import ComingSoonDrawer from "./(components)/drawer";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import PickupSelector from "@/app/components/landing/pickup";
 import { format } from "date-fns";
 import axiosInstance from "@/lib/axios";
@@ -66,6 +66,7 @@ function HomePageContentInner() {
         setOpen(status);
     };
 
+    const router = useRouter();
     const searchParams = useSearchParams();
 
     // State from URL params
@@ -322,6 +323,44 @@ function HomePageContentInner() {
         return format(date, "MMM dd, yyyy 'at' HH:mm");
     };
 
+    const handleVehicleClick = (vehicleId: string) => {
+        // Build query params with current search filters
+        const params = new URLSearchParams();
+        
+        if (startTime) {
+            params.set("pickupDate", startTime);
+            // Extract time from startTime if available
+            try {
+                const pickupDateObj = new Date(startTime);
+                params.set("pickupTime", format(pickupDateObj, "hh:mm a"));
+            } catch (e) {
+                // Fallback if date parsing fails
+                params.set("pickupTime", "10:00 AM");
+            }
+        }
+        
+        if (endTime) {
+            params.set("dropDate", endTime);
+            // Extract time from endTime if available
+            try {
+                const dropDateObj = new Date(endTime);
+                params.set("dropTime", format(dropDateObj, "hh:mm a"));
+            } catch (e) {
+                // Fallback if date parsing fails
+                params.set("dropTime", "10:00 AM");
+            }
+        }
+        
+        if (latitude && longitude) {
+            params.set("pickupLocation", `${latitude}, ${longitude}`);
+            params.set("dropLocation", `${latitude}, ${longitude}`);
+        }
+
+        // Navigate to vehicle detail page
+        const queryString = params.toString();
+        router.push(`/vehicle/${vehicleId}${queryString ? `?${queryString}` : ""}`);
+    };
+
     return (
         <div className="min-h-screen w-full bg-white dark:bg-[#0B0A1B] text-black dark:text-white pb-24">
 
@@ -345,33 +384,39 @@ function HomePageContentInner() {
                     <p className="text-gray-800 dark:text-white text-sm mt-1">Find your best ride here</p>
                 </div>
 
-                {/* Search Row */}
-                <div className="flex items-center gap-2 mt-8 relative z-10">
-                    <button
-                        onClick={updateLocation}
-                        className="flex-1 rounded-full bg-white shadow-md py-3 px-4 flex items-center gap-2"
-                    >
-                        <MapPin size={18} className="text-gray-400 flex-shrink-0" />
-                        <span className="text-gray-700 text-sm font-medium truncate">
-                            {latitude && longitude ? `${parseFloat(latitude).toFixed(4)}, ${parseFloat(longitude).toFixed(4)}` : "Update location"}
-                        </span>
-                    </button>
+                {/* Horizontal Search Row - Separate Containers */}
+                <div className="flex items-center gap-3 mt-8 relative z-10">
+                    {/* Location and Date/Time Container */}
+                    <div className="flex-1 flex items-center gap-0 bg-white rounded-full shadow-md overflow-hidden">
+                        {/* Location Picker */}
+                        <button
+                            onClick={updateLocation}
+                            className="flex-1 py-3 px-4 flex items-center gap-2 border-r border-gray-200 min-w-0"
+                        >
+                            <MapPin size={18} className="text-gray-400 flex-shrink-0" />
+                            <span className="text-gray-700 text-sm font-medium truncate">
+                                {latitude && longitude ? `${parseFloat(latitude).toFixed(2)}, ${parseFloat(longitude).toFixed(2)}` : "Location"}
+                            </span>
+                        </button>
 
+                        {/* Date/Time Picker */}
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className="flex-1 py-3 px-4 flex items-center gap-2 min-w-0"
+                        >
+                            <Calendar size={18} className="text-gray-400 flex-shrink-0" />
+                            <span className="text-gray-700 text-sm font-medium truncate">
+                                {startTime ? format(new Date(startTime), "MMM dd, HH:mm") : "Pickup date"}
+                            </span>
+                        </button>
+                    </div>
+
+                    {/* Filter Button - Separate Circle */}
                     <button
                         onClick={() => setShowFilters(!showFilters)}
-                        className="flex-1 rounded-full bg-white shadow-md py-3 px-4 flex items-center gap-2"
+                        className="w-14 h-14 rounded-full bg-white shadow-md flex items-center justify-center flex-shrink-0"
                     >
-                        <Calendar size={18} className="text-gray-400 flex-shrink-0" />
-                        <span className="text-gray-700 text-sm font-medium truncate">
-                            {startTime ? formatDateTime(startTime) : "Pickup date"}
-                        </span>
-                    </button>
-
-                    <button
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center flex-shrink-0"
-                    >
-                        <SlidersHorizontal className="w-5 h-5 text-gray-700" />
+                        <SlidersHorizontal className="w-6 h-6 text-gray-700" />
                     </button>
                 </div>
             </div>
@@ -491,7 +536,8 @@ function HomePageContentInner() {
                             {vehicles.map((vehicle, index) => (
                                 <Card
                                     key={vehicle._id}
-                                    className={`rounded-xl border shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-shadow h-full flex flex-col ${
+                                    onClick={() => handleVehicleClick(vehicle._id)}
+                                    className={`rounded-xl border shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-shadow h-full flex flex-col cursor-pointer ${
                                         index === 0 ? "border-2" : ""
                                     }`}
                                 >
