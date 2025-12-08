@@ -107,6 +107,8 @@ export default function VehicleImageSlider({
   // Auto-scroll to current index on mount
   useEffect(() => {
     if (scrollContainerRef.current && images.length > 0) {
+      
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentIndex(0);
       scrollContainerRef.current.scrollTo({ left: 0, behavior: "auto" });
     }
