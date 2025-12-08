@@ -151,7 +151,7 @@ function HomePageContentInner() {
             if (!data.success) {
                 // Handle validation errors
                 if (data.error && Array.isArray(data.error)) {
-                    const errorMessages = data.error.map((err: any) => err.message || err.path?.join('.')).join(', ');
+                    const errorMessages = data.error.map((err) => err.message || err.path?.join('.')).join(', ');
                     setError(`Validation error: ${errorMessages}`);
                 } else {
                     setError(data.message || "Failed to fetch vehicles. Please try again.");
@@ -379,13 +379,13 @@ function HomePageContentInner() {
                 />
                 
                 {/* Content Overlay */}
-                <div className="relative z-10">
+                {/* <div className="relative z-10">
                     <h1 className="text-3xl font-semibold">Available Vehicles</h1>
                     <p className="text-gray-800 dark:text-white text-sm mt-1">Find your best ride here</p>
-                </div>
+                </div> */}
 
                 {/* Horizontal Search Row - Separate Containers */}
-                <div className="flex items-center gap-3 mt-8 relative z-10">
+                <div className="flex items-center gap-3 mt-22 relative z-10">
                     {/* Location and Date/Time Container */}
                     <div className="flex-1 flex items-center gap-0 bg-white rounded-full shadow-md overflow-hidden">
                         {/* Location Picker */}
@@ -422,6 +422,10 @@ function HomePageContentInner() {
             </div>
 
             {/* Filter Drawer */}
+            {/**
+             * @salman
+             * convert to shadcn modal
+             */}
             {showFilters && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setShowFilters(false)}>
                     <div className="w-full bg-white dark:bg-[#191B27] rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -604,21 +608,19 @@ function HomePageContentInner() {
             </div>
             
             {/* Bottom Banner Section */}
-            <div className="w-full mt-8 mb-6 px-4">
+            {/* <div className="w-full mt-8 mb-6 px-4">
                 <div className="relative w-full aspect-[16/5] rounded-2xl overflow-hidden">
-                    {/* Light Mode Background */}
                     <div 
                         className="absolute inset-0 bg-cover bg-center bg-no-repeat dark:hidden rounded-2xl"
                         style={{ backgroundImage: 'url(/lightBanner.png)' }}
                     />
                     
-                    {/* Dark Mode Background */}
                     <div 
                         className="absolute inset-0 bg-cover bg-center bg-no-repeat hidden dark:block rounded-2xl"
                         style={{ backgroundImage: 'url(/darkBanner.png)' }}
                     />
                 </div>
-            </div>
+            </div> */}
             
             <ComingSoonDrawer open={open} setOpen={handleClose}/>
             {/* Bottom Navigation */}
