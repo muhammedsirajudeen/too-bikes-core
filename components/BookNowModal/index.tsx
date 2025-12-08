@@ -71,7 +71,7 @@ export default function BookNowModal({
         <DialogPrimitive.Content
           className={cn(
             "fixed bottom-0 left-0 right-0 z-50 w-full max-w-[430px] mx-auto",
-            "bg-white dark:bg-[#191B27] rounded-t-[30px] shadow-xl",
+            "bg-white dark:bg-[#191B27] rounded-t-[20px] shadow-xl",
             "data-[state=open]:animate-in data-[state=closed]:animate-out",
             "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
             "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
@@ -81,44 +81,55 @@ export default function BookNowModal({
           onEscapeKeyDown={handleClose}
           onPointerDownOutside={handleClose}
         >
-          <div className="relative flex flex-col p-6 pb-8">
+          <div className="relative w-full h-[502px] bg-white dark:bg-[#191B27] overflow-hidden rounded-t-[20px]">
+            {/* Scooter Image - Positioned absolutely at top 299px */}
+            <div className="absolute left-0 top-[299px] w-full h-[217px] pointer-events-none">
+              <Image
+                src="/loginImage.png"
+                alt="Scooter illustration"
+                fill
+                className="object-cover"
+                sizes="430px"
+                priority
+              />
+            </div>
+
             {/* Close Button */}
             <DialogPrimitive.Close
               onClick={handleClose}
               className={cn(
-                "absolute top-6 right-6 rounded-full p-1.5",
-                "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300",
-                "transition-colors focus:outline-none focus:ring-2 focus:ring-[#F4AA05] focus:ring-offset-2"
+                "absolute top-4 right-4 w-6 h-6 rounded-full z-20",
+                "text-[#99A1AF] hover:text-gray-600 dark:hover:text-gray-300",
+                "transition-colors focus:outline-none"
               )}
             >
-              <X className="h-5 w-5" />
+              <X className="w-full h-full" />
               <span className="sr-only">Close</span>
             </DialogPrimitive.Close>
 
-            {/* Content */}
-            <div className="flex flex-col pt-2 pb-4">
-              {/* Heading */}
+            {/* Header Content */}
+            <div className="absolute left-4 top-6 flex flex-col gap-3 z-10">
               <DialogPrimitive.Title asChild>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                <h2 className="text-2xl font-medium text-[#111111] dark:text-white leading-[30px]">
                   Start your ride
                 </h2>
               </DialogPrimitive.Title>
-
-              {/* Subtext */}
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-[15px] font-normal text-black/75 dark:text-gray-400 leading-[18.75px]">
                 Enter your WhatsApp number to login.
               </p>
+            </div>
 
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="w-full space-y-6">
-                {/* Input Field */}
-                <div className="space-y-2">
-                  <label
-                    htmlFor="phone-number"
-                    className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    Number
-                  </label>
+            {/* Form Content */}
+            <div className="absolute left-4 top-[121px] w-[358px] flex flex-col items-center gap-6 z-10">
+              {/* Input Field */}
+              <div className="w-full flex flex-col gap-3">
+                <label
+                  htmlFor="phone-number"
+                  className="text-sm font-medium text-[#0B0B0B] dark:text-gray-300 leading-5"
+                >
+                  Number
+                </label>
+                <div className="w-full h-[54px] px-3 py-1 bg-white dark:bg-[#0B0A1B] rounded-lg border border-[#E5E5E5] dark:border-gray-700 shadow-sm flex items-center">
                   <input
                     id="phone-number"
                     type="tel"
@@ -127,47 +138,36 @@ export default function BookNowModal({
                     onChange={handlePhoneChange}
                     placeholder="Enter number"
                     className={cn(
-                      "w-full px-4 py-3 rounded-xl border",
-                      "bg-white dark:bg-[#0B0A1B]",
-                      "border-gray-200 dark:border-gray-700",
-                      "text-gray-900 dark:text-white",
-                      "placeholder:text-gray-400 dark:placeholder:text-gray-500",
-                      "focus:outline-none focus:ring-2 focus:ring-[#F4AA05] focus:border-transparent",
-                      "transition-all"
+                      "flex-1 bg-transparent outline-none",
+                      "text-base text-gray-900 dark:text-white leading-6",
+                      "placeholder:text-[#737373] dark:placeholder:text-gray-500"
                     )}
                     maxLength={15}
-                    required
                   />
                 </div>
-
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  disabled={phoneNumber.trim().length < 10}
-                  className={cn(
-                    "w-full bg-[#F4AA05] hover:bg-[#cf9002]",
-                    "text-black font-semibold text-lg",
-                    "px-6 py-4 rounded-full shadow-md",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                    "transition-all"
-                  )}
-                >
-                  Button
-                </Button>
-              </form>
-            </div>
-
-            {/* Scooter Image - Aligned at bottom */}
-            <div className="flex justify-start mt-6 pt-4">
-              <div className="relative w-40 h-28">
-                <Image
-                  src="/bike.png"
-                  alt="Scooter illustration"
-                  fill
-                  className="object-contain object-left"
-                  sizes="160px"
-                />
               </div>
+
+              {/* Submit Button */}
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (phoneNumber.trim().length >= 10) {
+                    onSubmit(phoneNumber.trim());
+                  }
+                }}
+                disabled={phoneNumber.trim().length < 10}
+                className={cn(
+                  "w-[140px] h-[44px] px-[45px] py-[18px] bg-[#F7B638] hover:bg-[#e5a525]",
+                  "rounded-full shadow-md",
+                  "flex flex-col justify-center items-center",
+                  "disabled:opacity-50 disabled:cursor-not-allowed",
+                  "transition-all"
+                )}
+              >
+                <span className="text-sm font-semibold text-white leading-[17.5px]">
+                  Button
+                </span>
+              </button>
             </div>
           </div>
         </DialogPrimitive.Content>
@@ -175,4 +175,3 @@ export default function BookNowModal({
     </DialogPrimitive.Root>
   );
 }
-
