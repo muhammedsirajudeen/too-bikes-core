@@ -56,4 +56,13 @@ export class VehicleRepository extends BaseRepository<IVehicle> {
     };
   }
 
+  /**
+   * Find a vehicle by its ID and populate store details
+   */
+  async findVehicleByIdWithStore(vehicleId: Types.ObjectId | string): Promise<IVehicle | null> {
+    return VehicleModel.findById(vehicleId)
+      .populate("store")
+      .exec();
+  }
+
 }

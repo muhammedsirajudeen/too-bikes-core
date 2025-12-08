@@ -1,5 +1,6 @@
 import { StoreRepository } from "@/repository/store.repository";
 import { VehicleRepository } from "@/repository/vehicle.repository";
+import { toObjectId } from "@/utils";
 
 export class AvailableVehiclesService {
   constructor(
@@ -23,6 +24,10 @@ export class AvailableVehiclesService {
     const storeIds = nearbyStores.map(s => s._id);
     
     return this.vehicleRepo.findAvailableVehiclesByStores(storeIds, startTime, endTime, page, limit);
+  }
+
+  async findVehicleById(vehicleId: string) {
+    return this.vehicleRepo.findVehicleByIdWithStore(toObjectId(vehicleId));
   }
 
 
