@@ -1,5 +1,6 @@
 import { StoreRepository } from "@/repository/store.repository";
 import { VehicleRepository } from "@/repository/vehicle.repository";
+import { toObjectId } from "@/utils";
 
 export class AvailableVehiclesService {
   constructor(
@@ -28,6 +29,10 @@ export class AvailableVehiclesService {
       // Re-throw with more context
       throw new Error(`Failed to find available vehicles: ${error instanceof Error ? error.message : String(error)}`);
     }
+  }
+
+  async findVehicleById(vehicleId: string) {
+    return this.vehicleRepo.findVehicleByIdWithStore(toObjectId(vehicleId));
   }
 
 

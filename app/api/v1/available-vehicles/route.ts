@@ -86,5 +86,5 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
         hasPrev: validated.data.page > 1,
       }
     },
-  });
+  },{ status: HttpStatus.OK });
 });
