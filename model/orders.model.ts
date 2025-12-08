@@ -1,5 +1,5 @@
 import { IOrder } from "../core/interface/model/IOrder.model";
-import { Schema, model, connection } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 const orderSchema = new Schema<IOrder>(
   {
@@ -29,5 +29,4 @@ const orderSchema = new Schema<IOrder>(
   { timestamps: true }
 );
 
-// Prevent model overwrite during hot reloading in Next.js
-export const OrderModel = connection.models.Order || model<IOrder>("Order", orderSchema);
+export const OrderModel = models.Order || model<IOrder>("Order", orderSchema);

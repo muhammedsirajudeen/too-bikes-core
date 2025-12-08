@@ -261,7 +261,7 @@ function HomePageContentInner() {
             page: "1",
             limit: limit.toString(),
         });
-        window.history.replaceState({}, '', `/home?${params.toString()}`);
+        window.history.replaceState({}, '', `/api?${params.toString()}`);
         
         setShowFilters(false);
     };
@@ -326,19 +326,24 @@ function HomePageContentInner() {
         <div className="min-h-screen w-full bg-white dark:bg-[#0B0A1B] text-black dark:text-white pb-24">
 
             {/* Top Banner */}
-            <div className="w-full rounded-b-3xl bg-[#FDCB67] p-6 pt-10 relative overflow-hidden">
-                <h1 className="text-3xl font-semibold">Available Vehicles</h1>
-                <p className="text-gray-800 text-sm mt-1">Find your best ride here</p>
-
-                {/* Banner Illustration */}
-                <Image
-                    src="/banner.png"
-                    alt="banner"
-                    width={180}
-                    height={180}
-                    className="absolute right-4 bottom-4"
-                    style={{ height: "auto" }}
+            <div className="w-full rounded-b-3xl p-6 pt-10 relative overflow-hidden">
+                {/* Light Mode Background */}
+                <div 
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat dark:hidden rounded-b-3xl"
+                    style={{ backgroundImage: 'url(/lightBanner.png)' }}
                 />
+                
+                {/* Dark Mode Background */}
+                <div 
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat hidden dark:block rounded-b-3xl"
+                    style={{ backgroundImage: 'url(/darkBanner.png)' }}
+                />
+                
+                {/* Content Overlay */}
+                <div className="relative z-10">
+                    <h1 className="text-3xl font-semibold">Available Vehicles</h1>
+                    <p className="text-gray-800 dark:text-white text-sm mt-1">Find your best ride here</p>
+                </div>
 
                 {/* Search Row */}
                 <div className="flex items-center gap-2 mt-8 relative z-10">
@@ -417,28 +422,28 @@ function HomePageContentInner() {
 
                 {/* Skeleton Loading State */}
                 {loading && (
-                    <div className="mt-4 space-y-4">
-                        {[...Array(3)].map((_, index) => (
+                    <div className="grid gap-3 mt-4" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+                        {[...Array(4)].map((_, index) => (
                             <Card
                                 key={`skeleton-${index}`}
-                                className="rounded-xl border shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
+                                className="rounded-xl border shadow-[0_2px_8px_rgba(0,0,0,0.08)] h-full flex flex-col"
                             >
-                                <CardContent className="flex items-center gap-4 p-4">
+                                <CardContent className="flex flex-col gap-3 p-3 h-full">
                                     {/* Image Skeleton */}
-                                    <div className="w-[155px] h-[100px] bg-gray-200 dark:bg-gray-700 rounded-lg skeleton" />
+                                    <div className="w-full aspect-[16/10] bg-gray-200 dark:bg-gray-700 rounded-lg skeleton" />
 
                                     {/* Content Skeleton */}
-                                    <div className="flex-1 space-y-2">
+                                    <div className="flex-1 flex flex-col space-y-2">
                                         {/* Title Skeleton */}
-                                        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 skeleton" />
+                                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 skeleton" />
                                         
                                         {/* Price Skeleton */}
-                                        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3 skeleton" />
+                                        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/2 skeleton" />
                                         
                                         {/* Badge and License Plate Skeleton */}
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full w-16 skeleton" />
-                                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 skeleton" />
+                                        <div className="flex items-center gap-1.5 mt-1">
+                                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-12 skeleton" />
+                                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16 skeleton" />
                                         </div>
                                     </div>
                                 </CardContent>
@@ -482,41 +487,45 @@ function HomePageContentInner() {
                 {/* Vehicle Cards */}
                 {!loading && !error && vehicles.length > 0 && (
                     <>
-                        {vehicles.map((vehicle, index) => (
-                            <Card
-                                key={vehicle._id}
-                                className={`mt-4 rounded-xl border shadow-[0_2px_8px_rgba(0,0,0,0.08)] ${
-                                    index === 0 ? "border-2" : ""
-                                }`}
-                            >
-                                <CardContent className="flex items-center gap-4 p-4">
-                                    <Image
-                                        src={vehicle.image && vehicle.image.length > 0 ? vehicle.image[0] : "/bike.png"}
-                                        alt={vehicle.name}
-                                        width={155}
-                                        height={100}
-                                        className="object-contain"
-                                    />
-
-                                    <div className="flex-1">
-                                        <h3 className="font-semibold leading-tight">
-                                            {vehicle.brand} {vehicle.name}
-                                        </h3>
-                                        <p className="text-[#FF6B00] font-semibold mt-1">
-                                            ₹ {vehicle.pricePerHour}/hour
-                                        </p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <Badge variant="outline" className="text-xs">
-                                                {vehicle.fuelType}
-                                            </Badge>
-                                            <span className="text-xs text-gray-500">
-                                                {vehicle.licensePlate}
-                                            </span>
+                        <div className="grid gap-3 mt-4" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+                            {vehicles.map((vehicle, index) => (
+                                <Card
+                                    key={vehicle._id}
+                                    className={`rounded-xl border shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-shadow h-full flex flex-col ${
+                                        index === 0 ? "border-2" : ""
+                                    }`}
+                                >
+                                    <CardContent className="flex flex-col gap-3 p-3 h-full">
+                                        <div className="relative w-full aspect-[16/10] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                                            <Image
+                                                src={vehicle.image && vehicle.image.length > 0 ? vehicle.image[0] : "/bike.png"}
+                                                alt={vehicle.name}
+                                                fill
+                                                className="object-cover"
+                                                sizes="50vw"
+                                            />
                                         </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
+
+                                        <div className="flex-1 flex flex-col">
+                                            <h3 className="font-semibold leading-tight text-sm">
+                                                {vehicle.brand} {vehicle.name}
+                                            </h3>
+                                            <p className="text-[#FF6B00] font-semibold mt-1.5 text-base">
+                                                ₹ {vehicle.pricePerHour}/hour
+                                            </p>
+                                            <div className="flex items-center gap-1.5 mt-1.5">
+                                                <Badge variant="outline" className="text-xs">
+                                                    {vehicle.fuelType}
+                                                </Badge>
+                                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                    {vehicle.licensePlate}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
 
                         {/* Pagination */}
                         {pagination && pagination.totalPages > 1 && (
@@ -547,6 +556,24 @@ function HomePageContentInner() {
                     </>
                 )}
             </div>
+            
+            {/* Bottom Banner Section */}
+            <div className="w-full mt-8 mb-6 px-4">
+                <div className="relative w-full aspect-[16/5] rounded-2xl overflow-hidden">
+                    {/* Light Mode Background */}
+                    <div 
+                        className="absolute inset-0 bg-cover bg-center bg-no-repeat dark:hidden rounded-2xl"
+                        style={{ backgroundImage: 'url(/lightBanner.png)' }}
+                    />
+                    
+                    {/* Dark Mode Background */}
+                    <div 
+                        className="absolute inset-0 bg-cover bg-center bg-no-repeat hidden dark:block rounded-2xl"
+                        style={{ backgroundImage: 'url(/darkBanner.png)' }}
+                    />
+                </div>
+            </div>
+            
             <ComingSoonDrawer open={open} setOpen={handleClose}/>
             {/* Bottom Navigation */}
             <Navbar />

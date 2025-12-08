@@ -1,5 +1,5 @@
 import { IStore } from "../core/interface/model/IStore.model";
-import { Schema, model, connection } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 const storeSchema = new Schema<IStore>(
   {
@@ -33,5 +33,4 @@ const storeSchema = new Schema<IStore>(
 
 storeSchema.index({ "location.coordinates": "2dsphere" });
 
-// Prevent model overwrite during hot reloading in Next.js
-export const StoreModel = connection.models.Store || model<IStore>("Store", storeSchema);
+export const StoreModel = models.Store || model<IStore>("Store", storeSchema);

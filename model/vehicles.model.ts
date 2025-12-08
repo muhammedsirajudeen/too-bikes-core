@@ -1,5 +1,5 @@
 import { IVehicle } from "../core/interface/model/IVehicle.model";
-import { Schema, model, connection } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 const vehicleSchema = new Schema<IVehicle>(
   {
@@ -29,5 +29,4 @@ const vehicleSchema = new Schema<IVehicle>(
   { timestamps: true }
 );
 
-// Prevent model overwrite during hot reloading in Next.js
-export const VehicleModel = connection.models.Vehicle || model<IVehicle>("Vehicle", vehicleSchema);
+export const VehicleModel = models.Vehicle || model<IVehicle>("Vehicle", vehicleSchema);
