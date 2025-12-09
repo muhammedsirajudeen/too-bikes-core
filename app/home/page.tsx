@@ -377,13 +377,13 @@ function HomePageContentInner() {
                 {/* Light Mode Background */}
                 <div 
                     className="absolute inset-0 bg-cover bg-center bg-no-repeat dark:hidden rounded-b-3xl"
-                    style={{ backgroundImage: 'url(/lightBanner.png)' }}
+                    style={{ backgroundImage: 'url(/lightNav.jpg)' }}
                 />
                 
                 {/* Dark Mode Background */}
                 <div 
                     className="absolute inset-0 bg-cover bg-center bg-no-repeat hidden dark:block rounded-b-3xl"
-                    style={{ backgroundImage: 'url(/darkBanner.png)' }}
+                    style={{ backgroundImage: 'url(/darkNav.jpg)' }}
                 />
                 
                 {/* Content Overlay */}
