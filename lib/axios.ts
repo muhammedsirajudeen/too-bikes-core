@@ -22,6 +22,9 @@ axiosInstance.interceptors.request.use(
 );
 
 // Response interceptor
+/**
+ * @salman seems like cursors avaratham ith ingane alla
+ */
 axiosInstance.interceptors.response.use(
   (response) => {
     // Return response data directly

@@ -203,6 +203,10 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
   }));
 
   const handleBookNow = () => {
+    /**
+     * @salman 
+     * never fail silently ensure that the user is indicated
+     */
     if (!vehicle) return;
     // Open the modal instead of navigating directly
     setIsModalOpen(true);

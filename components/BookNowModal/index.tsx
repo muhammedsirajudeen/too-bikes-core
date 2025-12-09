@@ -28,11 +28,13 @@ export default function BookNowModal({
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMounted(true);
   }, []);
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPhoneNumber(initialPhoneNumber);
     }
   }, [isOpen, initialPhoneNumber]);
@@ -59,8 +61,8 @@ export default function BookNowModal({
   if (!isMounted) return null;
 
   return (
-    <Drawer 
-      open={isOpen} 
+    <Drawer
+      open={isOpen}
       onOpenChange={(open) => !open && handleClose()}
       dismissible={true}
       snapPoints={[1]}
