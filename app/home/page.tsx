@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/drawer";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Navbar from "./(components)/navbar";
 import { useState, useEffect, useCallback, Suspense } from "react";
@@ -28,40 +27,8 @@ import PickupSelector from "@/app/components/landing/pickup";
 import { format } from "date-fns";
 import axiosInstance from "@/lib/axios";
 import { AxiosError } from "axios";
-
-interface Vehicle {
-  _id: string;
-  store: string;
-  name: string;
-  brand: string;
-  fuelType: "petrol" | "electric" | "diesel";
-  pricePerHour: number;
-  licensePlate: string;
-  image: string[];
-  availability: boolean;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface Pagination {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
-
-interface VehicleResponse {
-  success: boolean;
-  message: string;
-  data: Vehicle[];
-  metadata: {
-    pagination: Pagination;
-  };
-  error?: Array<{ message?: string; path?: string[] }>;
-}
+import { Pagination, VehicleResponse } from "../api/v1/available-vehicles/route";
+import { IVehicle } from "@/core/interface/model/IVehicle.model";
 
 function HomePageContentInner() {
     const [open, setOpen] = useState(false);
@@ -89,10 +56,11 @@ function HomePageContentInner() {
     const [showFilters, setShowFilters] = useState(false);
 
     // Data state
-    const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+    const [vehicles, setVehicles] = useState<IVehicle[]>([]);
     const [pagination, setPagination] = useState<Pagination | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>("");
+    const [district, setDistrict] = useState<string>("");
 
     // Initialize from URL params
     useEffect(() => {
@@ -175,6 +143,7 @@ function HomePageContentInner() {
             }
 
             setVehicles(data.data);
+            setDistrict(data.metadata.district);
             setPagination(data.metadata?.pagination || null);
             setError(""); // Clear any previous errors
         } catch (err) {
@@ -396,7 +365,8 @@ function HomePageContentInner() {
                         >
                             <MapPin size={18} className="text-gray-400 shrink-0" />
                             <span className="text-gray-700 text-sm font-medium truncate">
-                                {latitude && longitude ? `${parseFloat(latitude).toFixed(2)}, ${parseFloat(longitude).toFixed(2)}` : "Location"}
+                                {/* {latitude && longitude ? `${parseFloat(latitude).toFixed(2)}, ${parseFloat(longitude).toFixed(2)}` : "Location"} */}
+                                {district ? district : "Location"}
                             </span>
                         </button>
 
@@ -541,16 +511,15 @@ function HomePageContentInner() {
                 {!loading && !error && vehicles.length > 0 && (
                     <>
                         <div className="grid gap-3 mt-4" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-                            {vehicles.map((vehicle, index) => (
+                            {vehicles.map((vehicle) => (
                                 <Card
-                                    key={vehicle._id}
-                                    onClick={() => handleVehicleClick(vehicle._id)}
-                                    className={`rounded-xl border shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-shadow h-full flex flex-col cursor-pointer ${
-                                        index === 0 ? "border-2" : ""
-                                    }`}
+                                    key={vehicle._id.toString()}
+                                    onClick={() => handleVehicleClick(vehicle._id.toString())}
+                                    className="group relative rounded-xl border-0 bg-white dark:bg-gray-900 shadow-sm active:scale-[0.98] transition-all duration-200 h-full flex flex-col cursor-pointer overflow-hidden"
                                 >
-                                    <CardContent className="flex flex-col gap-3 p-3 h-full">
-                                        <div className="relative w-full aspect-16/10 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                                    <CardContent className="flex flex-col p-0 h-full">
+                                        {/* Image */}
+                                        <div className="relative w-full aspect-16/10 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
                                             <Image
                                                 src={vehicle.image && vehicle.image.length > 0 ? vehicle.image[0] : "/bike.png"}
                                                 alt={vehicle.name}
@@ -558,27 +527,60 @@ function HomePageContentInner() {
                                                 className="object-cover"
                                                 sizes="50vw"
                                             />
+                                            {/* Image count badge - top right */}
+                                            {vehicle.image && vehicle.image.length > 1 && (
+                                                <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm text-white text-xs font-medium px-2 py-1 rounded-md flex items-center gap-1">
+                                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                                                    </svg>
+                                                    {vehicle.image.length}
+                                                </div>
+                                            )}
                                         </div>
 
-                                        <div className="flex-1 flex flex-col">
-                                            <h3 className="font-semibold leading-tight text-sm">
-                                                {vehicle.brand} {vehicle.name}
-                                            </h3>
-                                            <p className="text-[#FF6B00] font-semibold mt-1.5 text-base">
-                                                ₹ {vehicle.pricePerHour}/hour
-                                            </p>
-                                            <div className="flex items-center gap-1.5 mt-1.5">
-                                                <Badge variant="outline" className="text-xs">
+                                        {/* Content */}
+                                        <div className="flex-1 flex flex-col p-3">
+                                            {/* Brand and Model - compact */}
+                                            <div className="mb-2.5">
+                                                <h3 className="font-bold text-base text-gray-900 dark:text-white leading-tight">
+                                                    {vehicle.brand}
+                                                </h3>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                                    {vehicle.name}
+                                                </p>
+                                            </div>
+                                            
+                                            {/* Pricing - Compact gradient card */}
+                                            <div className="relative mb-2.5 py-2">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-baseline gap-1">
+                                                        <span className="text-xl font-bold text-[#FF6B00]">
+                                                            ₹{vehicle.pricePerHour}
+                                                        </span>
+                                                        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">/hr</span>
+                                                    </div>
+                                                    <div className="flex items-baseline gap-1">
+                                                        <span className="text-base font-semibold text-[#FF6B00]">
+                                                            ₹{vehicle.pricePerDay}
+                                                        </span>
+                                                        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">/day</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Details - Compact pills */}
+                                            <div className="flex items-center gap-1.5 mt-auto">
+                                                <div className="px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-[10px] font-medium text-gray-700 dark:text-gray-300">
                                                     {vehicle.fuelType}
-                                                </Badge>
-                                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                </div>
+                                                <div className="px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-[10px] font-mono text-gray-600 dark:text-gray-400">
                                                     {vehicle.licensePlate}
-                                                </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </CardContent>
                                 </Card>
-                            ))}
+                                                            ))}
                         </div>
 
                         {/* Pagination */}

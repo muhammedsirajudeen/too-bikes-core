@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState,  } from "react";
 import { X } from "lucide-react";
 import {
   Drawer,
@@ -18,7 +18,6 @@ interface BookNowModalProps {
   phoneNumber?: string;
 }
 
-const emptySubscribe = () => () => {};
 
 export default function BookNowModal({
   isOpen,
@@ -27,23 +26,19 @@ export default function BookNowModal({
   phoneNumber: initialPhoneNumber = "",
 }: BookNowModalProps) {
   const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber);
-  
-  const isMounted = useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false
-  );
+  const [isMounted, setIsMounted] = useState(false);
 
-  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
-  const [prevInitialPhoneNumber, setPrevInitialPhoneNumber] = useState(initialPhoneNumber);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsMounted(true);
+  }, []);
 
-  if (isOpen !== prevIsOpen || initialPhoneNumber !== prevInitialPhoneNumber) {
-    setPrevIsOpen(isOpen);
-    setPrevInitialPhoneNumber(initialPhoneNumber);
+  useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPhoneNumber(initialPhoneNumber);
     }
-  }
+  }, [isOpen, initialPhoneNumber]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -67,8 +62,8 @@ export default function BookNowModal({
   if (!isMounted) return null;
 
   return (
-    <Drawer 
-      open={isOpen} 
+    <Drawer
+      open={isOpen}
       onOpenChange={(open) => !open && handleClose()}
       dismissible={true}
       snapPoints={[1]}

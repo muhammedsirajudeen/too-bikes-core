@@ -20,11 +20,12 @@ export class AvailableVehiclesService {
     try {
       const nearbyStores = await this.storeRepo.findStoresNear(longitude, latitude, radiusKm);
       
-      if (nearbyStores.length === 0) return { vehicles: [], total: 0 };
+      if (nearbyStores.length === 0) return { vehicles: [], total: 0, district: "" };
 
       const storeIds = nearbyStores.map(s => s._id);
+      const district = nearbyStores[0]?.district;
       
-      return this.vehicleRepo.findAvailableVehiclesByStores(storeIds, startTime, endTime, page, limit);
+      return this.vehicleRepo.findAvailableVehiclesByStores(storeIds, startTime, endTime, page, limit,district);
     } catch (error) {
       // Re-throw with more context
       throw new Error(`Failed to find available vehicles: ${error instanceof Error ? error.message : String(error)}`);
