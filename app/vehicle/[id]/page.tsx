@@ -227,12 +227,20 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
   };
 
   // const totalRent = vehicle.pricePerHour;
-  const totalRent = dropDate.getTime() - pickupDate.getTime() > 0
-    ? vehicle.pricePerDay! *
-      Math.ceil(
-        (dropDate.getTime() - pickupDate.getTime()) / (1000 * 60 * 60 * 24)
-      )
-    : vehicle.pricePerHour;
+  const ms = dropDate.getTime() - pickupDate.getTime();
+  const hours = ms / (1000 * 60 * 60);
+  const days = ms / (1000 * 60 * 60 * 24);
+
+  let totalRent;
+
+  if (hours < 24) {
+    // charge hourly
+    totalRent = vehicle.pricePerHour * Math.ceil(hours);
+  } else {
+    // charge daily
+    totalRent = vehicle.pricePerDay * Math.ceil(days);
+  }
+
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0B0A1B] pb-24 max-w-[430px] mx-auto">

@@ -15,7 +15,7 @@ export interface IVehicle extends Document {
   fuelType: "petrol" | "diesel" | "electric";
 
   pricePerHour: number;
-  pricePerDay?: number;
+  pricePerDay: number;
 
   mileage?: number;
 
