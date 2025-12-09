@@ -24,3 +24,4 @@ export default function FeatureRow({ icon, label, value }: FeatureRowProps) {
   );
 }
 
+

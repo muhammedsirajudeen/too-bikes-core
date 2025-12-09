@@ -28,3 +28,4 @@ export default function BottomCTA({ totalRent, onBookNow }: BottomCTAProps) {
   );
 }
 
+

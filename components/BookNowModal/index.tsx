@@ -87,7 +87,7 @@ export default function BookNowModal({
             {/* Scooter Image - Positioned absolutely at top 299px */}
             <div className="absolute left-0 top-[299px] w-full h-[217px] pointer-events-none">
               <Image
-                src="/loginImage.png"
+                src="/modalImage.png"
                 alt="Scooter illustration"
                 fill
                 className="object-cover"
