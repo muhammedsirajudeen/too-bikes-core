@@ -6,8 +6,9 @@ const storeSchema = new Schema<IStore>(
     name: { type: String, required: true, trim: true },
     description: { type: String, trim: true },
 
+    address: { type: String, required: true },
+    district: { type: String, required: true },
     location: {
-      address: { type: String, required: true },
       coordinates: {
         type: {
           type: String,
@@ -20,6 +21,7 @@ const storeSchema = new Schema<IStore>(
         }
       }
     },
+
 
     openingTime: { type: String, required: true },
     closingTime: { type: String, required: true },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { X } from "lucide-react";
 import {
   Drawer,
@@ -18,6 +18,8 @@ interface BookNowModalProps {
   phoneNumber?: string;
 }
 
+const emptySubscribe = () => () => {};
+
 export default function BookNowModal({
   isOpen,
   onClose,
@@ -25,17 +27,23 @@ export default function BookNowModal({
   phoneNumber: initialPhoneNumber = "",
 }: BookNowModalProps) {
   const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber);
-  const [isMounted, setIsMounted] = useState(false);
+  
+  const isMounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [prevInitialPhoneNumber, setPrevInitialPhoneNumber] = useState(initialPhoneNumber);
 
-  useEffect(() => {
+  if (isOpen !== prevIsOpen || initialPhoneNumber !== prevInitialPhoneNumber) {
+    setPrevIsOpen(isOpen);
+    setPrevInitialPhoneNumber(initialPhoneNumber);
     if (isOpen) {
       setPhoneNumber(initialPhoneNumber);
     }
-  }, [isOpen, initialPhoneNumber]);
+  }
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -71,7 +79,7 @@ export default function BookNowModal({
           "bg-white dark:bg-[#191B27] rounded-t-[20px]",
           "p-0 gap-0",
           "focus:outline-none",
-          "[&[data-vaul-drawer]]:transition-transform [&[data-vaul-drawer]]:duration-[2000ms] [&[data-vaul-drawer]]:ease-out"
+          "data-vaul-drawer:transition-transform data-vaul-drawer:duration-2000 data-vaul-drawer:ease-out"
         )}
       >
         <div className="relative w-full h-[502px] bg-white dark:bg-[#191B27] overflow-hidden rounded-t-[20px]">
@@ -146,7 +154,7 @@ export default function BookNowModal({
               onClick={handleSubmit}
               disabled={phoneNumber.trim().length < 10}
               className={cn(
-                "w-[140px] h-[44px] px-[45px] py-[18px] bg-[#F7B638] hover:bg-[#e5a525]",
+                "w-[140px] h-11 px-[45px] py-[18px] bg-[#F7B638] hover:bg-[#e5a525]",
                 "rounded-full shadow-md",
                 "flex flex-col justify-center items-center",
                 "disabled:opacity-50 disabled:cursor-not-allowed",

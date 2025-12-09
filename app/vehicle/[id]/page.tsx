@@ -2,7 +2,6 @@
 
 import { use, useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import axiosInstance from "@/lib/axios";
 import { AxiosError } from "axios";
 import VehicleImageSlider from "./(components)/VehicleImageSlider";

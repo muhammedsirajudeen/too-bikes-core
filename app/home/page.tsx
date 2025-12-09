@@ -2,10 +2,6 @@
 
 import Image from "next/image";
 import {
-    Home,
-    Heart,
-    History,
-    User,
     SlidersHorizontal,
     Calendar,
     MapPin,
@@ -16,7 +12,6 @@ import {
 
 import {
     Drawer,
-    DrawerClose,
     DrawerContent,
     DrawerHeader,
     DrawerTitle,
@@ -304,7 +299,7 @@ function HomePageContentInner() {
                 window.history.replaceState({}, '', `/home?${params.toString()}`);
             },
             (error) => {
-                setError("Unable to get your location");
+                setError(`Unable to get your location: ${error.message}`);
             }
         );
     };
@@ -326,10 +321,6 @@ function HomePageContentInner() {
         window.history.replaceState({}, '', `/home?${params.toString()}`);
     };
 
-    const formatDateTime = (isoString: string) => {
-        const date = new Date(isoString);
-        return format(date, "MMM dd, yyyy 'at' HH:mm");
-    };
 
     const handleVehicleClick = (vehicleId: string) => {
         // Build query params with current search filters
@@ -344,6 +335,7 @@ function HomePageContentInner() {
             } catch (e) {
                 // Fallback if date parsing fails
                 params.set("pickupTime", "10:00 AM");
+                console.error("Error parsing startTime:", e);
             }
         }
         
@@ -356,6 +348,7 @@ function HomePageContentInner() {
             } catch (e) {
                 // Fallback if date parsing fails
                 params.set("dropTime", "10:00 AM");
+                console.error("Error parsing endTime:", e);
             }
         }
         
@@ -401,7 +394,7 @@ function HomePageContentInner() {
                             onClick={updateLocation}
                             className="flex-1 py-3 px-4 flex items-center gap-2 border-r border-gray-200 min-w-0"
                         >
-                            <MapPin size={18} className="text-gray-400 flex-shrink-0" />
+                            <MapPin size={18} className="text-gray-400 shrink-0" />
                             <span className="text-gray-700 text-sm font-medium truncate">
                                 {latitude && longitude ? `${parseFloat(latitude).toFixed(2)}, ${parseFloat(longitude).toFixed(2)}` : "Location"}
                             </span>
@@ -412,7 +405,7 @@ function HomePageContentInner() {
                             onClick={() => setShowFilters(!showFilters)}
                             className="flex-1 py-3 px-4 flex items-center gap-2 min-w-0"
                         >
-                            <Calendar size={18} className="text-gray-400 flex-shrink-0" />
+                            <Calendar size={18} className="text-gray-400 shrink-0" />
                             <span className="text-gray-700 text-sm font-medium truncate">
                                 {startTime ? format(new Date(startTime), "MMM dd, HH:mm") : "Pickup date"}
                             </span>
@@ -422,7 +415,7 @@ function HomePageContentInner() {
                     {/* Filter Button - Separate Circle */}
                     <button
                         onClick={() => setShowFilters(!showFilters)}
-                        className="w-14 h-14 rounded-full bg-white shadow-md flex items-center justify-center flex-shrink-0"
+                        className="w-14 h-14 rounded-full bg-white shadow-md flex items-center justify-center shrink-0"
                     >
                         <SlidersHorizontal className="w-6 h-6 text-gray-700" />
                     </button>
@@ -490,7 +483,7 @@ function HomePageContentInner() {
                             >
                                 <CardContent className="flex flex-col gap-3 p-3 h-full">
                                     {/* Image Skeleton */}
-                                    <div className="w-full aspect-[16/10] bg-gray-200 dark:bg-gray-700 rounded-lg skeleton" />
+                                    <div className="w-full aspect-16/10 bg-gray-200 dark:bg-gray-700 rounded-lg skeleton" />
 
                                     {/* Content Skeleton */}
                                     <div className="flex-1 flex flex-col space-y-2">
@@ -557,7 +550,7 @@ function HomePageContentInner() {
                                     }`}
                                 >
                                     <CardContent className="flex flex-col gap-3 p-3 h-full">
-                                        <div className="relative w-full aspect-[16/10] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                                        <div className="relative w-full aspect-16/10 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
                                             <Image
                                                 src={vehicle.image && vehicle.image.length > 0 ? vehicle.image[0] : "/bike.png"}
                                                 alt={vehicle.name}
