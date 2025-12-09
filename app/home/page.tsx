@@ -44,7 +44,7 @@ function HomePageContentInner() {
     const [endTime, setEndTime] = useState<string>("");
     const [latitude, setLatitude] = useState<string>("");
     const [longitude, setLongitude] = useState<string>("");
-    const [radiusKm, setRadiusKm] = useState<string>("50");
+    const [radiusKm, setRadiusKm] = useState<string>("100");
     const [currentPage, setCurrentPage] = useState<number>(1);
     const limit = 10;
 
@@ -528,14 +528,6 @@ function HomePageContentInner() {
                                                 sizes="50vw"
                                             />
                                             {/* Image count badge - top right */}
-                                            {vehicle.image && vehicle.image.length > 1 && (
-                                                <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm text-white text-xs font-medium px-2 py-1 rounded-md flex items-center gap-1">
-                                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                                                    </svg>
-                                                    {vehicle.image.length}
-                                                </div>
-                                            )}
                                         </div>
 
                                         {/* Content */}
