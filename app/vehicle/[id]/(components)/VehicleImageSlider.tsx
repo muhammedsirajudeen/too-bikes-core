@@ -48,7 +48,9 @@ export default function VehicleImageSlider({
     }
   };
 
-  const handleBack = () => {
+  const handleBack = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (onBack) {
       onBack();
     } else {
@@ -160,19 +162,25 @@ export default function VehicleImageSlider({
       {/* Back Button - Top Left */}
       <button
         onClick={handleBack}
-        className="absolute left-4 top-4 w-9 h-9 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors z-10"
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        className="absolute left-4 top-4 w-9 h-9 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors z-20 pointer-events-auto"
         aria-label="Go back"
+        type="button"
       >
         <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
       </button>
 
       {/* Share and Favorite Buttons - Top Right */}
-      <div className="absolute right-4 top-4 flex items-center gap-2 z-10">
+      <div className="absolute right-4 top-4 flex items-center gap-2 z-20 pointer-events-auto">
         {/* Share Button */}
         <button
           onClick={handleShare}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
           className="w-9 h-9 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           aria-label="Share"
+          type="button"
         >
           <Share2 className="w-5 h-5 text-gray-700 dark:text-gray-300" />
         </button>
@@ -180,10 +188,13 @@ export default function VehicleImageSlider({
         {/* Favorite Button */}
         <button
           onClick={handleFavoriteToggle}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
           className={`w-9 h-9 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
             isFavorite ? "bg-red-50 border-red-200" : ""
           }`}
           aria-label="Add to favorites"
+          type="button"
         >
           <Heart
             className={`w-5 h-5 ${

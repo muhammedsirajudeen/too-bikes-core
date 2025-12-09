@@ -14,6 +14,14 @@ import {
     Loader2,
 } from "lucide-react";
 
+import {
+    Drawer,
+    DrawerClose,
+    DrawerContent,
+    DrawerHeader,
+    DrawerTitle,
+} from "@/components/ui/drawer";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -426,44 +434,47 @@ function HomePageContentInner() {
              * @salman
              * convert to shadcn modal
              */}
-            {showFilters && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-end" onClick={() => setShowFilters(false)}>
-                    <div className="w-full bg-white dark:bg-[#191B27] rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                        <h3 className="text-xl font-semibold mb-4">Update Filters</h3>
-                        
-                        <div className="space-y-4">
-                            <div>
-                                <h4 className="font-light mb-2">Pickup Date & Time</h4>
-                                <PickupSelector
-                                    pickup={true}
-                                    date={pickupDate}
-                                    time={pickupTime}
-                                    onDateChange={setPickupDate}
-                                    onTimeChange={setPickupTime}
-                                />
-                            </div>
-
-                            <div>
-                                <h4 className="font-light mb-2">Dropoff Date & Time</h4>
-                                <PickupSelector
-                                    pickup={false}
-                                    date={dropoffDate}
-                                    time={dropoffTime}
-                                    onDateChange={setDropoffDate}
-                                    onTimeChange={setDropoffTime}
-                                />
-                            </div>
-
-                            <Button
-                                onClick={updateFilters}
-                                className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] text-black font-semibold text-lg"
-                            >
-                                Apply Filters
-                            </Button>
-                        </div>
-                    </div>
+            {/* Filter Drawer - Using Shadcn Drawer */}
+<Drawer open={showFilters} onOpenChange={setShowFilters}>
+    <DrawerContent className="max-w-[430px] mx-auto bg-white dark:bg-[#191B27] rounded-t-3xl p-0">
+        <div className="w-full p-6 max-h-[80vh] overflow-y-auto">
+            <DrawerHeader className="p-0 mb-4">
+                <DrawerTitle className="text-xl font-semibold">Update Filters</DrawerTitle>
+            </DrawerHeader>
+            
+            <div className="space-y-4">
+                <div>
+                    <h4 className="font-light mb-2">Pickup Date & Time</h4>
+                    <PickupSelector
+                        pickup={true}
+                        date={pickupDate}
+                        time={pickupTime}
+                        onDateChange={setPickupDate}
+                        onTimeChange={setPickupTime}
+                    />
                 </div>
-            )}
+
+                <div>
+                    <h4 className="font-light mb-2">Dropoff Date & Time</h4>
+                    <PickupSelector
+                        pickup={false}
+                        date={dropoffDate}
+                        time={dropoffTime}
+                        onDateChange={setDropoffDate}
+                        onTimeChange={setDropoffTime}
+                    />
+                </div>
+
+                <Button
+                    onClick={updateFilters}
+                    className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] text-black font-semibold text-lg"
+                >
+                    Apply Filters
+                </Button>
+            </div>
+        </div>
+    </DrawerContent>
+</Drawer>
 
             {/* Vehicles Section */}
             <div className="px-4 mt-5">
