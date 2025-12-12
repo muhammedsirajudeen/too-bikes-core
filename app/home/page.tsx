@@ -2,10 +2,6 @@
 
 import Image from "next/image";
 import {
-    Home,
-    Heart,
-    History,
-    User,
     SlidersHorizontal,
     Calendar,
     MapPin,
@@ -16,7 +12,6 @@ import {
 
 import {
     Drawer,
-    DrawerClose,
     DrawerContent,
     DrawerHeader,
     DrawerTitle,
@@ -303,7 +298,7 @@ function HomePageContentInner() {
                 });
                 window.history.replaceState({}, '', `/home?${params.toString()}`);
             },
-            (error) => {
+            () => {
                 setError("Unable to get your location");
             }
         );
@@ -326,11 +321,6 @@ function HomePageContentInner() {
         window.history.replaceState({}, '', `/home?${params.toString()}`);
     };
 
-    const formatDateTime = (isoString: string) => {
-        const date = new Date(isoString);
-        return format(date, "MMM dd, yyyy 'at' HH:mm");
-    };
-
     const handleVehicleClick = (vehicleId: string) => {
         // Build query params with current search filters
         const params = new URLSearchParams();
@@ -341,7 +331,7 @@ function HomePageContentInner() {
             try {
                 const pickupDateObj = new Date(startTime);
                 params.set("pickupTime", format(pickupDateObj, "hh:mm a"));
-            } catch (e) {
+            } catch {
                 // Fallback if date parsing fails
                 params.set("pickupTime", "10:00 AM");
             }
@@ -353,7 +343,7 @@ function HomePageContentInner() {
             try {
                 const dropDateObj = new Date(endTime);
                 params.set("dropTime", format(dropDateObj, "hh:mm a"));
-            } catch (e) {
+            } catch {
                 // Fallback if date parsing fails
                 params.set("dropTime", "10:00 AM");
             }
@@ -482,34 +472,56 @@ function HomePageContentInner() {
 
                 {/* Skeleton Loading State */}
                 {loading && (
-                    <div className="grid gap-3 mt-4" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-                        {[...Array(4)].map((_, index) => (
-                            <Card
-                                key={`skeleton-${index}`}
-                                className="rounded-xl border shadow-[0_2px_8px_rgba(0,0,0,0.08)] h-full flex flex-col"
-                            >
-                                <CardContent className="flex flex-col gap-3 p-3 h-full">
-                                    {/* Image Skeleton */}
-                                    <div className="w-full aspect-[16/10] bg-gray-200 dark:bg-gray-700 rounded-lg skeleton" />
-
-                                    {/* Content Skeleton */}
-                                    <div className="flex-1 flex flex-col space-y-2">
-                                        {/* Title Skeleton */}
-                                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 skeleton" />
-                                        
-                                        {/* Price Skeleton */}
-                                        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/2 skeleton" />
-                                        
-                                        {/* Badge and License Plate Skeleton */}
-                                        <div className="flex items-center gap-1.5 mt-1">
-                                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-12 skeleton" />
-                                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16 skeleton" />
+                   <div className="grid gap-3 mt-4" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+                            {vehicles.map((vehicle) => (
+                                <Card
+                                    key={vehicle._id}
+                                    onClick={() => handleVehicleClick(vehicle._id)}
+                                    className="rounded bg-white dark:bg-[#1A1C2E] border border-[rgba(180,177,177,0.33)] hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden"
+                                >
+                                    <CardContent className="p-3 space-y-3">
+                                        {/* Image Container */}
+                                        <div className="relative w-full aspect-[155/100] rounded overflow-hidden bg-gray-50 dark:bg-gray-800">
+                                            <Image
+                                                src={vehicle.image && vehicle.image.length > 0 ? vehicle.image[0] : "/bike.png"}
+                                                alt={vehicle.name}
+                                                fill
+                                                className="object-cover"
+                                                sizes="50vw"
+                                            />
                                         </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+
+                                        {/* Title */}
+                                        <h3 className="font-semibold text-[16px] leading-5 line-clamp-2 min-h-[40px]">
+                                            {vehicle.brand} {vehicle.name}
+                                        </h3>
+
+                                        {/* Fuel Type & License */}
+                                        <p className="text-[#7D7878] dark:text-gray-400 text-[10px] font-light">
+                                            {vehicle.fuelType.charAt(0).toUpperCase() + vehicle.fuelType.slice(1)} | {vehicle.licensePlate}
+                                        </p>
+
+                                        {/* Rating - Optional, placeholder for now */}
+                                        <p className="text-[10px]">
+                                            <span className="font-medium text-black dark:text-white">4.5 stars</span>
+                                            <span className="text-[#7D7878] dark:text-gray-400 font-light"> (120 reviews)</span>
+                                        </p>
+
+                                        {/* Price & Button Row */}
+                                        <div className="flex items-center justify-between pt-1">
+                                            <div className="text-black dark:text-white text-[12px]">
+                                                <span className="font-light">₹ </span>
+                                                <span className="font-medium">{vehicle.pricePerHour}</span>
+                                                <span className="font-light">/hour</span>
+                                            </div>
+                                            <button className="bg-[#F7B638] hover:bg-[#e0a530] text-black text-[8px] font-normal px-4 py-1.5 rounded-full transition-colors">
+                                                Book Now
+                                            </button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
                 )}
 
                 {/* Error State */}

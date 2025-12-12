@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import PickupSelector from "./pickup";
@@ -11,14 +11,19 @@ import { useRouter } from "next/navigation";
 import ROUTE_CONSTANTS from "@/constants/routeConstants";
 
 export default function LandingPage() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Pickup state
   const [pickupDate, setPickupDate] = useState<Date | null>(null);
   const [pickupTime, setPickupTime] = useState<string | null>(null);
-  
+
   // Dropoff state
   const [dropoffDate, setDropoffDate] = useState<Date | null>(null);
   const [dropoffTime, setDropoffTime] = useState<string | null>(null);
@@ -31,13 +36,6 @@ export default function LandingPage() {
   // Location state
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
 
   const getLocation = async (): Promise<{ lat: number; lng: number } | null> => {
     if (!navigator.geolocation) {
@@ -100,8 +98,7 @@ export default function LandingPage() {
 
     if (!isValid) return;
 
-    // Validate dropoff is after pickup
-    // At this point, we know pickupDate and dropoffDate are not null due to validation above
+    // Create full datetime objects for validation
     const pickupDateTime = new Date(pickupDate!);
     const [pickupHour, pickupMinute] = pickupTime!.split(":").map(Number);
     pickupDateTime.setHours(pickupHour, pickupMinute, 0, 0);
@@ -110,6 +107,15 @@ export default function LandingPage() {
     const [dropoffHour, dropoffMinute] = dropoffTime!.split(":").map(Number);
     dropoffDateTime.setHours(dropoffHour, dropoffMinute, 0, 0);
 
+    const now = new Date();
+
+    // Validate pickup is not in the past
+    if (pickupDateTime <= now) {
+      setPickupError("Pickup time cannot be in the past");
+      isValid = false;
+    }
+
+    // Validate dropoff is after pickup
     if (dropoffDateTime <= pickupDateTime) {
       setDropoffError("Drop-off time must be later than pickup time");
       isValid = false;
@@ -145,17 +151,22 @@ export default function LandingPage() {
     router.push(`${ROUTE_CONSTANTS.HOME}?${params.toString()}`);
   };
 
+  // Use resolvedTheme for consistent server/client rendering
+  const currentTheme = mounted ? resolvedTheme : "light";
+  const isLight = currentTheme === "light";
+
   return (
     <div className="relative w-full min-h-screen bg-white dark:bg-[#0B0A1B]">
 
       {/* FIXED RESPONSIVE HEADER IMAGE */}
       <div className="fixed top-0 left-0 w-full h-[clamp(320px,45vh,500px)] z-0">
         <Image
-          src={theme === "light" ? "/day_wm.png" : "/night_wm.png"}
+          src={isLight ? "/day_wm.png" : "/night_wm.png"}
           alt="Scooter"
           fill
           className="object-cover object-top"
           priority
+          suppressHydrationWarning
         />
       </div>
 
@@ -165,52 +176,58 @@ export default function LandingPage() {
         className="fixed top-4 right-4 z-30 p-2 rounded-full 
           bg-black/70 text-white dark:bg-white/80 dark:text-black 
           backdrop-blur shadow"
+        suppressHydrationWarning
       >
-        {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+        {mounted ? (
+          isLight ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />
+        ) : (
+          <Moon className="h-5 w-5" />
+        )}
       </Button>
 
       {/* SCROLL CONTENT BELOW THE HEADER IMAGE */}
-<div className="relative z-10 pt-[clamp(310px,42vh,490px)] flex flex-col items-center pb-0">
-  <Card className="w-full max-w-xl rounded-t-3xl rounded-b-none border-none shadow-none dark:bg-[#0B0A1B] bg-white">
-    <CardContent className="pt-4 px-6 pb-10">
-      <h2 className="text-[26px] font-medium">
-        Find the right ride, <br /> every time
-      </h2>
+      <div className="relative z-10 pt-[clamp(310px,42vh,490px)] flex flex-col items-center pb-0">
+        <Card className="w-full max-w-xl rounded-t-3xl rounded-b-none border-none shadow-none dark:bg-[#0B0A1B] bg-white">
+          <CardContent className="pt-4 px-6 pb-10">
+            <h2 className="text-[26px] font-medium">
+              Find the right ride, <br /> every time
+            </h2>
 
-      <h4 className="font-light m-3 mt-10">Select your pick time</h4>
-      <PickupSelector 
-        pickup={true} 
-        date={pickupDate}
-        time={pickupTime}
-        onDateChange={setPickupDate}
-        onTimeChange={setPickupTime}
-        error={pickupError}
-      />
+            <h4 className="font-light m-3 mt-10">Select your pick time</h4>
+            <PickupSelector
+              pickup={true}
+              date={pickupDate}
+              time={pickupTime}
+              onDateChange={setPickupDate}
+              onTimeChange={setPickupTime}
+              error={pickupError}
+            />
 
-      <h4 className="font-light m-3">Select your dropoff time</h4>
-      <PickupSelector 
-        pickup={false} 
-        date={dropoffDate}
-        time={dropoffTime}
-        onDateChange={setDropoffDate}
-        onTimeChange={setDropoffTime}
-        error={dropoffError}
-      />
+            <h4 className="font-light m-3">Select your dropoff time</h4>
+            <PickupSelector
+              pickup={false}
+              date={dropoffDate}
+              time={dropoffTime}
+              onDateChange={setDropoffDate}
+              onTimeChange={setDropoffTime}
+              error={dropoffError}
+              minDate={pickupDate}
+            />
 
-      {locationError && (
-        <p className="text-red-500 text-sm mt-2 px-2">{locationError}</p>
-      )}
+            {locationError && (
+              <p className="text-red-500 text-sm mt-2 px-2">{locationError}</p>
+            )}
 
-      <Button
-        onClick={validateAndNavigate}
-        disabled={isRequestingLocation}
-        className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] mt-24 text-black font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isRequestingLocation ? "Getting location..." : "Let's Drive"}
-      </Button>
-    </CardContent>
-  </Card>
-</div>
+            <Button
+              onClick={validateAndNavigate}
+              disabled={isRequestingLocation}
+              className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] mt-24 text-black font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isRequestingLocation ? "Getting location..." : "Let's Drive"}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
     </div>
   );

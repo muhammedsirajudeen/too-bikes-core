@@ -29,6 +29,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Set outputFileTracingRoot to fix workspace root warning
+  outputFileTracingRoot: process.cwd(),
 };
 
 export default nextConfig;

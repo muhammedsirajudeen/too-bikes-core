@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 import {
   Drawer,
@@ -25,17 +25,6 @@ export default function BookNowModal({
   phoneNumber: initialPhoneNumber = "",
 }: BookNowModalProps) {
   const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      setPhoneNumber(initialPhoneNumber);
-    }
-  }, [isOpen, initialPhoneNumber]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -51,17 +40,27 @@ export default function BookNowModal({
     }
   };
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      setPhoneNumber(initialPhoneNumber);
+      onClose();
+    } else {
+      // Reset phone number when modal opens
+      setPhoneNumber(initialPhoneNumber);
+    }
+  };
+
   const handleClose = () => {
-    setPhoneNumber("");
+    setPhoneNumber(initialPhoneNumber);
     onClose();
   };
 
-  if (!isMounted) return null;
+  if (!isOpen) return null;
 
   return (
     <Drawer 
       open={isOpen} 
-      onOpenChange={(open) => !open && handleClose()}
+      onOpenChange={handleOpenChange}
       dismissible={true}
       snapPoints={[1]}
     >
