@@ -1,4 +1,5 @@
 import { HttpStatus } from "@/constants/status.constant";
+import { IVehicle } from "@/core/interface/model/IVehicle.model";
 import { querySchema } from "@/lib/schemas/availableVehicles.schema";
 import { AvailableVehiclesService } from "@/services/client/available-vehicles.service";
 import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
@@ -7,25 +8,12 @@ import { NextRequest, NextResponse } from "next/server";
 export interface VehicleResponse {
   success: boolean;
   message: string;
-  data: Vehicle[];
+  data: IVehicle[];
   metadata: {
+    district: string;
     pagination: Pagination;
   };
-}
-
-export interface Vehicle {
-  _id: string;
-  store: string;
-  name: string;
-  brand: string;
-  fuelType: "petrol" | "electric" | "diesel"; // narrowed based on provided data
-  pricePerHour: number;
-  licensePlate: string;
-  image: string[];
-  availability: boolean;
-  isActive: boolean;
-  createdAt: string; // can change to Date if needed
-  updatedAt: string; // can change to Date if needed
+  error?: Array<{ message?: string; path?: string[] }>;
 }
 
 export interface Pagination {
@@ -50,7 +38,7 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
       error: validated.error.issues
     },{status: HttpStatus.BAD_REQUEST});
   }
-  const { vehicles, total } = await availableVehiclesService.findAvailableVehicles(
+  const { vehicles, total, district } = await availableVehiclesService.findAvailableVehicles(
     validated.data.latitude,
     validated.data.longitude,
     validated.data.radiusKm,
@@ -65,6 +53,7 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
     message: "Available vehicles retrieved successfully",
     data: vehicles,
     metadata: {
+      district:district,
       pagination:{
         page: validated.data.page,
         limit: validated.data.limit,

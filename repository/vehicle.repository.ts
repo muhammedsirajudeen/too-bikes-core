@@ -12,8 +12,9 @@ export class VehicleRepository extends BaseRepository<IVehicle> {
     startTime: Date,
     endTime: Date,
     page = 1,
-    limit = 10
-  ): Promise<{ vehicles: IVehicle[]; total: number }> {
+    limit = 10,
+    district: string,
+  ): Promise<{ vehicles: IVehicle[]; total: number,district:string }> {
     const pipeline = [
       {
         $match: {
@@ -52,7 +53,8 @@ export class VehicleRepository extends BaseRepository<IVehicle> {
     const [result] = await VehicleModel.aggregate(pipeline);
     return {
       vehicles: result.vehicles,
-      total: result.total[0]?.count || 0
+      total: result.total[0]?.count || 0,
+      district
     };
   }
 

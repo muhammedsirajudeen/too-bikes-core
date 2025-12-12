@@ -14,6 +14,7 @@ export default function BottomCTA({ totalRent, onBookNow }: BottomCTAProps) {
         <div>
           <p className="text-sm text-gray-500 dark:text-gray-400">Total Rent</p>
           <p className="text-2xl font-bold text-white dark:text-white">
+            
             ₹{totalRent}
           </p>
         </div>

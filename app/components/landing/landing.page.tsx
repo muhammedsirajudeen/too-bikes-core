@@ -37,6 +37,12 @@ export default function LandingPage() {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
   const getLocation = async (): Promise<{ lat: number; lng: number } | null> => {
     if (!navigator.geolocation) {
       setLocationError("Geolocation is not supported by your browser");

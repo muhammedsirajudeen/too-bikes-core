@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, } from "react";
 import { X } from "lucide-react";
 import {
   Drawer,
@@ -18,6 +18,7 @@ interface BookNowModalProps {
   phoneNumber?: string;
 }
 
+
 export default function BookNowModal({
   isOpen,
   onClose,
@@ -25,6 +26,19 @@ export default function BookNowModal({
   phoneNumber: initialPhoneNumber = "",
 }: BookNowModalProps) {
   const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPhoneNumber(initialPhoneNumber);
+    }
+  }, [isOpen, initialPhoneNumber]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -58,9 +72,9 @@ export default function BookNowModal({
   if (!isOpen) return null;
 
   return (
-    <Drawer 
-      open={isOpen} 
-      onOpenChange={handleOpenChange}
+    <Drawer
+      open={isOpen}
+      onOpenChange={(open) => !open && handleClose()}
       dismissible={true}
       snapPoints={[1]}
     >
@@ -70,7 +84,7 @@ export default function BookNowModal({
           "bg-white dark:bg-[#191B27] rounded-t-[20px]",
           "p-0 gap-0",
           "focus:outline-none",
-          "[&[data-vaul-drawer]]:transition-transform [&[data-vaul-drawer]]:duration-[2000ms] [&[data-vaul-drawer]]:ease-out"
+          "data-vaul-drawer:transition-transform data-vaul-drawer:duration-2000 data-vaul-drawer:ease-out"
         )}
       >
         <div className="relative w-full h-[502px] bg-white dark:bg-[#191B27] overflow-hidden rounded-t-[20px]">
@@ -145,7 +159,7 @@ export default function BookNowModal({
               onClick={handleSubmit}
               disabled={phoneNumber.trim().length < 10}
               className={cn(
-                "w-[140px] h-[44px] px-[45px] py-[18px] bg-[#F7B638] hover:bg-[#e5a525]",
+                "w-[140px] h-11 px-[45px] py-[18px] bg-[#F7B638] hover:bg-[#e5a525]",
                 "rounded-full shadow-md",
                 "flex flex-col justify-center items-center",
                 "disabled:opacity-50 disabled:cursor-not-allowed",

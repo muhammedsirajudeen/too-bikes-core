@@ -22,7 +22,7 @@ export class StoreRepository extends BaseRepository<IStore> {
     }
 
     try {
-      return await StoreModel.find({
+      return await this.model.find({
         "location.coordinates": {
           $nearSphere: {
             $geometry: { type: "Point", coordinates: [longitude, latitude] },

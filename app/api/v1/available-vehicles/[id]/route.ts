@@ -1,18 +1,19 @@
 import { HttpStatus } from "@/constants/status.constant";
 import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
 import { NextRequest, NextResponse } from "next/server";
-import { Vehicle } from "../route";
 import { IFAQ } from "@/core/interface/model/IFaq.model";
 import { FaqService } from "@/services/shared/faq.service";
 import { AvailableVehiclesService } from "@/services/client/available-vehicles.service";
+import { IVehicle } from "@/core/interface/model/IVehicle.model";
 
-export interface VehicleResponse {
+export interface VehicleDetailResponse {
   success: boolean;
   message: string;
   data: {
-    vehicle: Vehicle;
+    vehicle: IVehicle;
     FAQ: IFAQ[];
   };
+  error?: Array<{ message?: string; path?: string[] }>;
 }
 
 const faqService = new FaqService();    

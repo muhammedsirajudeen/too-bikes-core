@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/drawer";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Navbar from "./(components)/navbar";
 import { useState, useEffect, useCallback, Suspense } from "react";
@@ -28,40 +27,8 @@ import PickupSelector from "@/app/components/landing/pickup";
 import { format } from "date-fns";
 import axiosInstance from "@/lib/axios";
 import { AxiosError } from "axios";
-
-interface Vehicle {
-  _id: string;
-  store: string;
-  name: string;
-  brand: string;
-  fuelType: "petrol" | "electric" | "diesel";
-  pricePerHour: number;
-  licensePlate: string;
-  image: string[];
-  availability: boolean;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface Pagination {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
-
-interface VehicleResponse {
-  success: boolean;
-  message: string;
-  data: Vehicle[];
-  metadata: {
-    pagination: Pagination;
-  };
-  error?: Array<{ message?: string; path?: string[] }>;
-}
+import { Pagination, VehicleResponse } from "../api/v1/available-vehicles/route";
+import { IVehicle } from "@/core/interface/model/IVehicle.model";
 
 function HomePageContentInner() {
     const [open, setOpen] = useState(false);
@@ -77,7 +44,7 @@ function HomePageContentInner() {
     const [endTime, setEndTime] = useState<string>("");
     const [latitude, setLatitude] = useState<string>("");
     const [longitude, setLongitude] = useState<string>("");
-    const [radiusKm, setRadiusKm] = useState<string>("50");
+    const [radiusKm, setRadiusKm] = useState<string>("100");
     const [currentPage, setCurrentPage] = useState<number>(1);
     const limit = 10;
 
@@ -89,10 +56,11 @@ function HomePageContentInner() {
     const [showFilters, setShowFilters] = useState(false);
 
     // Data state
-    const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+    const [vehicles, setVehicles] = useState<IVehicle[]>([]);
     const [pagination, setPagination] = useState<Pagination | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>("");
+    const [district, setDistrict] = useState<string>("");
 
     // Initialize from URL params
     useEffect(() => {
@@ -175,6 +143,7 @@ function HomePageContentInner() {
             }
 
             setVehicles(data.data);
+            setDistrict(data.metadata.district);
             setPagination(data.metadata?.pagination || null);
             setError(""); // Clear any previous errors
         } catch (err) {
@@ -266,7 +235,7 @@ function HomePageContentInner() {
             limit: limit.toString(),
         });
         window.history.replaceState({}, '', `/api?${params.toString()}`);
-        
+
         setShowFilters(false);
     };
 
@@ -280,7 +249,7 @@ function HomePageContentInner() {
             (position) => {
                 const lat = position.coords.latitude.toString();
                 const lng = position.coords.longitude.toString();
-                
+
                 // Update state directly - this will trigger fetchVehicles automatically
                 setLatitude(lat);
                 setLongitude(lng);
@@ -298,8 +267,8 @@ function HomePageContentInner() {
                 });
                 window.history.replaceState({}, '', `/home?${params.toString()}`);
             },
-            () => {
-                setError("Unable to get your location");
+            (error) => {
+                setError(`Unable to get your location: ${error.message}`);
             }
         );
     };
@@ -321,10 +290,11 @@ function HomePageContentInner() {
         window.history.replaceState({}, '', `/home?${params.toString()}`);
     };
 
+
     const handleVehicleClick = (vehicleId: string) => {
         // Build query params with current search filters
         const params = new URLSearchParams();
-        
+
         if (startTime) {
             params.set("pickupDate", startTime);
             // Extract time from startTime if available
@@ -334,9 +304,10 @@ function HomePageContentInner() {
             } catch {
                 // Fallback if date parsing fails
                 params.set("pickupTime", "10:00 AM");
+                console.error("Error parsing startTime:", e);
             }
         }
-        
+
         if (endTime) {
             params.set("dropDate", endTime);
             // Extract time from endTime if available
@@ -346,9 +317,10 @@ function HomePageContentInner() {
             } catch {
                 // Fallback if date parsing fails
                 params.set("dropTime", "10:00 AM");
+                console.error("Error parsing endTime:", e);
             }
         }
-        
+
         if (latitude && longitude) {
             params.set("pickupLocation", `${latitude}, ${longitude}`);
             params.set("dropLocation", `${latitude}, ${longitude}`);
@@ -365,17 +337,17 @@ function HomePageContentInner() {
             {/* Top Banner */}
             <div className="w-full rounded-b-3xl p-6 pt-10 relative overflow-hidden">
                 {/* Light Mode Background */}
-                <div 
+                <div
                     className="absolute inset-0 bg-cover bg-center bg-no-repeat dark:hidden rounded-b-3xl"
                     style={{ backgroundImage: 'url(/lightNav.jpg)' }}
                 />
-                
+
                 {/* Dark Mode Background */}
-                <div 
+                <div
                     className="absolute inset-0 bg-cover bg-center bg-no-repeat hidden dark:block rounded-b-3xl"
                     style={{ backgroundImage: 'url(/darkNav.jpg)' }}
                 />
-                
+
                 {/* Content Overlay */}
                 {/* <div className="relative z-10">
                     <h1 className="text-3xl font-semibold">Available Vehicles</h1>
@@ -391,9 +363,10 @@ function HomePageContentInner() {
                             onClick={updateLocation}
                             className="flex-1 py-3 px-4 flex items-center gap-2 border-r border-gray-200 min-w-0"
                         >
-                            <MapPin size={18} className="text-gray-400 flex-shrink-0" />
+                            <MapPin size={18} className="text-gray-400 shrink-0" />
                             <span className="text-gray-700 text-sm font-medium truncate">
-                                {latitude && longitude ? `${parseFloat(latitude).toFixed(2)}, ${parseFloat(longitude).toFixed(2)}` : "Location"}
+                                {/* {latitude && longitude ? `${parseFloat(latitude).toFixed(2)}, ${parseFloat(longitude).toFixed(2)}` : "Location"} */}
+                                {district ? district : "Location"}
                             </span>
                         </button>
 
@@ -402,7 +375,7 @@ function HomePageContentInner() {
                             onClick={() => setShowFilters(!showFilters)}
                             className="flex-1 py-3 px-4 flex items-center gap-2 min-w-0"
                         >
-                            <Calendar size={18} className="text-gray-400 flex-shrink-0" />
+                            <Calendar size={18} className="text-gray-400 shrink-0" />
                             <span className="text-gray-700 text-sm font-medium truncate">
                                 {startTime ? format(new Date(startTime), "MMM dd, HH:mm") : "Pickup date"}
                             </span>
@@ -412,7 +385,7 @@ function HomePageContentInner() {
                     {/* Filter Button - Separate Circle */}
                     <button
                         onClick={() => setShowFilters(!showFilters)}
-                        className="w-14 h-14 rounded-full bg-white shadow-md flex items-center justify-center flex-shrink-0"
+                        className="w-14 h-14 rounded-full bg-white shadow-md flex items-center justify-center shrink-0"
                     >
                         <SlidersHorizontal className="w-6 h-6 text-gray-700" />
                     </button>
@@ -425,46 +398,46 @@ function HomePageContentInner() {
              * convert to shadcn modal
              */}
             {/* Filter Drawer - Using Shadcn Drawer */}
-<Drawer open={showFilters} onOpenChange={setShowFilters}>
-    <DrawerContent className="max-w-[430px] mx-auto bg-white dark:bg-[#191B27] rounded-t-3xl p-0">
-        <div className="w-full p-6 max-h-[80vh] overflow-y-auto">
-            <DrawerHeader className="p-0 mb-4">
-                <DrawerTitle className="text-xl font-semibold">Update Filters</DrawerTitle>
-            </DrawerHeader>
-            
-            <div className="space-y-4">
-                <div>
-                    <h4 className="font-light mb-2">Pickup Date & Time</h4>
-                    <PickupSelector
-                        pickup={true}
-                        date={pickupDate}
-                        time={pickupTime}
-                        onDateChange={setPickupDate}
-                        onTimeChange={setPickupTime}
-                    />
-                </div>
+            <Drawer open={showFilters} onOpenChange={setShowFilters}>
+                <DrawerContent className="max-w-[430px] mx-auto bg-white dark:bg-[#191B27] rounded-t-3xl p-0">
+                    <div className="w-full p-6 max-h-[80vh] overflow-y-auto">
+                        <DrawerHeader className="p-0 mb-4">
+                            <DrawerTitle className="text-xl font-semibold">Update Filters</DrawerTitle>
+                        </DrawerHeader>
 
-                <div>
-                    <h4 className="font-light mb-2">Dropoff Date & Time</h4>
-                    <PickupSelector
-                        pickup={false}
-                        date={dropoffDate}
-                        time={dropoffTime}
-                        onDateChange={setDropoffDate}
-                        onTimeChange={setDropoffTime}
-                    />
-                </div>
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="font-light mb-2">Pickup Date & Time</h4>
+                                <PickupSelector
+                                    pickup={true}
+                                    date={pickupDate}
+                                    time={pickupTime}
+                                    onDateChange={setPickupDate}
+                                    onTimeChange={setPickupTime}
+                                />
+                            </div>
 
-                <Button
-                    onClick={updateFilters}
-                    className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] text-black font-semibold text-lg"
-                >
-                    Apply Filters
-                </Button>
-            </div>
-        </div>
-    </DrawerContent>
-</Drawer>
+                            <div>
+                                <h4 className="font-light mb-2">Dropoff Date & Time</h4>
+                                <PickupSelector
+                                    pickup={false}
+                                    date={dropoffDate}
+                                    time={dropoffTime}
+                                    onDateChange={setDropoffDate}
+                                    onTimeChange={setDropoffTime}
+                                />
+                            </div>
+
+                            <Button
+                                onClick={updateFilters}
+                                className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] text-black font-semibold text-lg"
+                            >
+                                Apply Filters
+                            </Button>
+                        </div>
+                    </div>
+                </DrawerContent>
+            </Drawer>
 
             {/* Vehicles Section */}
             <div className="px-4 mt-5">
@@ -472,56 +445,34 @@ function HomePageContentInner() {
 
                 {/* Skeleton Loading State */}
                 {loading && (
-                   <div className="grid gap-3 mt-4" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-                            {vehicles.map((vehicle) => (
-                                <Card
-                                    key={vehicle._id}
-                                    onClick={() => handleVehicleClick(vehicle._id)}
-                                    className="rounded bg-white dark:bg-[#1A1C2E] border border-[rgba(180,177,177,0.33)] hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden"
-                                >
-                                    <CardContent className="p-3 space-y-3">
-                                        {/* Image Container */}
-                                        <div className="relative w-full aspect-[155/100] rounded overflow-hidden bg-gray-50 dark:bg-gray-800">
-                                            <Image
-                                                src={vehicle.image && vehicle.image.length > 0 ? vehicle.image[0] : "/bike.png"}
-                                                alt={vehicle.name}
-                                                fill
-                                                className="object-cover"
-                                                sizes="50vw"
-                                            />
+                    <div className="grid gap-3 mt-4" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+                        {[...Array(4)].map((_, index) => (
+                            <Card
+                                key={`skeleton-${index}`}
+                                className="rounded-xl border shadow-[0_2px_8px_rgba(0,0,0,0.08)] h-full flex flex-col"
+                            >
+                                <CardContent className="flex flex-col gap-3 p-3 h-full">
+                                    {/* Image Skeleton */}
+                                    <div className="w-full aspect-16/10 bg-gray-200 dark:bg-gray-700 rounded-lg skeleton" />
+
+                                    {/* Content Skeleton */}
+                                    <div className="flex-1 flex flex-col space-y-2">
+                                        {/* Title Skeleton */}
+                                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 skeleton" />
+
+                                        {/* Price Skeleton */}
+                                        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/2 skeleton" />
+
+                                        {/* Badge and License Plate Skeleton */}
+                                        <div className="flex items-center gap-1.5 mt-1">
+                                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-12 skeleton" />
+                                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16 skeleton" />
                                         </div>
-
-                                        {/* Title */}
-                                        <h3 className="font-semibold text-[16px] leading-5 line-clamp-2 min-h-[40px]">
-                                            {vehicle.brand} {vehicle.name}
-                                        </h3>
-
-                                        {/* Fuel Type & License */}
-                                        <p className="text-[#7D7878] dark:text-gray-400 text-[10px] font-light">
-                                            {vehicle.fuelType.charAt(0).toUpperCase() + vehicle.fuelType.slice(1)} | {vehicle.licensePlate}
-                                        </p>
-
-                                        {/* Rating - Optional, placeholder for now */}
-                                        <p className="text-[10px]">
-                                            <span className="font-medium text-black dark:text-white">4.5 stars</span>
-                                            <span className="text-[#7D7878] dark:text-gray-400 font-light"> (120 reviews)</span>
-                                        </p>
-
-                                        {/* Price & Button Row */}
-                                        <div className="flex items-center justify-between pt-1">
-                                            <div className="text-black dark:text-white text-[12px]">
-                                                <span className="font-light">₹ </span>
-                                                <span className="font-medium">{vehicle.pricePerHour}</span>
-                                                <span className="font-light">/hour</span>
-                                            </div>
-                                            <button className="bg-[#F7B638] hover:bg-[#e0a530] text-black text-[8px] font-normal px-4 py-1.5 rounded-full transition-colors">
-                                                Book Now
-                                            </button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
                 )}
 
                 {/* Error State */}
@@ -560,16 +511,15 @@ function HomePageContentInner() {
                 {!loading && !error && vehicles.length > 0 && (
                     <>
                         <div className="grid gap-3 mt-4" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-                            {vehicles.map((vehicle, index) => (
+                            {vehicles.map((vehicle) => (
                                 <Card
-                                    key={vehicle._id}
-                                    onClick={() => handleVehicleClick(vehicle._id)}
-                                    className={`rounded-xl border shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] transition-shadow h-full flex flex-col cursor-pointer ${
-                                        index === 0 ? "border-2" : ""
-                                    }`}
+                                    key={vehicle._id.toString()}
+                                    onClick={() => handleVehicleClick(vehicle._id.toString())}
+                                    className="group relative rounded-xl border-0 bg-white dark:bg-gray-900 shadow-sm active:scale-[0.98] transition-all duration-200 h-full flex flex-col cursor-pointer overflow-hidden"
                                 >
-                                    <CardContent className="flex flex-col gap-3 p-3 h-full">
-                                        <div className="relative w-full aspect-[16/10] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                                    <CardContent className="flex flex-col p-0 h-full">
+                                        {/* Image */}
+                                        <div className="relative w-full aspect-16/10 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
                                             <Image
                                                 src={vehicle.image && vehicle.image.length > 0 ? vehicle.image[0] : "/bike.png"}
                                                 alt={vehicle.name}
@@ -577,22 +527,47 @@ function HomePageContentInner() {
                                                 className="object-cover"
                                                 sizes="50vw"
                                             />
+                                            {/* Image count badge - top right */}
                                         </div>
 
-                                        <div className="flex-1 flex flex-col">
-                                            <h3 className="font-semibold leading-tight text-sm">
-                                                {vehicle.brand} {vehicle.name}
-                                            </h3>
-                                            <p className="text-[#FF6B00] font-semibold mt-1.5 text-base">
-                                                ₹ {vehicle.pricePerHour}/hour
-                                            </p>
-                                            <div className="flex items-center gap-1.5 mt-1.5">
-                                                <Badge variant="outline" className="text-xs">
+                                        {/* Content */}
+                                        <div className="flex-1 flex flex-col p-3">
+                                            {/* Brand and Model - compact */}
+                                            <div className="mb-2.5">
+                                                <h3 className="font-bold text-base text-gray-900 dark:text-white leading-tight">
+                                                    {vehicle.brand}
+                                                </h3>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                                    {vehicle.name}
+                                                </p>
+                                            </div>
+
+                                            {/* Pricing - Compact gradient card */}
+                                            <div className="relative mb-2.5 py-2">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-baseline gap-1">
+                                                        <span className="text-xl font-bold text-[#FF6B00]">
+                                                            ₹{vehicle.pricePerHour}
+                                                        </span>
+                                                        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">/hr</span>
+                                                    </div>
+                                                    <div className="flex items-baseline gap-1">
+                                                        <span className="text-base font-semibold text-[#FF6B00]">
+                                                            ₹{vehicle.pricePerDay}
+                                                        </span>
+                                                        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">/day</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Details - Compact pills */}
+                                            <div className="flex items-center gap-1.5 mt-auto">
+                                                <div className="px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-[10px] font-medium text-gray-700 dark:text-gray-300">
                                                     {vehicle.fuelType}
-                                                </Badge>
-                                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                </div>
+                                                <div className="px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-[10px] font-mono text-gray-600 dark:text-gray-400">
                                                     {vehicle.licensePlate}
-                                                </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </CardContent>
@@ -629,7 +604,7 @@ function HomePageContentInner() {
                     </>
                 )}
             </div>
-            
+
             {/* Bottom Banner Section */}
             {/* <div className="w-full mt-8 mb-6 px-4">
                 <div className="relative w-full aspect-[16/5] rounded-2xl overflow-hidden">
@@ -644,8 +619,8 @@ function HomePageContentInner() {
                     />
                 </div>
             </div> */}
-            
-            <ComingSoonDrawer open={open} setOpen={handleClose}/>
+
+            <ComingSoonDrawer open={open} setOpen={handleClose} />
             {/* Bottom Navigation */}
             <Navbar />
         </div>

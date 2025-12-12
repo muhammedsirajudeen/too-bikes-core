@@ -12,44 +12,13 @@ import FAQAccordion from "./(components)/FAQAccordion";
 import BottomCTA from "./(components)/BottomCTA";
 import BookNowModal from "@/components/BookNowModal";
 import VehicleDetailSkeleton from "./(components)/VehicleDetailSkeleton";
+import { IFAQ } from "@/core/interface/model/IFaq.model";
+import { VehicleDetailResponse } from "@/app/api/v1/available-vehicles/[id]/route";
+import { IStore } from "@/core/interface/model/IStore.model";
+import { IVehicle } from "@/core/interface/model/IVehicle.model";
 
 interface VehicleDetailPageProps {
   params: Promise<{ id: string }>;
-}
-
-interface Vehicle {
-  _id: string;
-  store: string;
-  name: string;
-  brand: string;
-  fuelType: "petrol" | "electric" | "diesel";
-  pricePerHour: number;
-  pricePerDay?: number;
-  licensePlate: string;
-  image?: string[];
-  availability: boolean;
-  isActive: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-interface FAQ {
-  question: string;
-  answer: string;
-  category?: string;
-  tags?: string[];
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-interface VehicleDetailResponse {
-  success: boolean;
-  message: string;
-  data: {
-    vehicle: Vehicle;
-    FAQ: FAQ[];
-  };
-  error?: Array<{ message?: string; path?: string[] }>;
 }
 
 export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
@@ -58,8 +27,8 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
   const searchParams = useSearchParams();
 
   // State management
-  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
-  const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const [vehicle, setVehicle] = useState<IVehicle | null>(null);
+  const [faqs, setFaqs] = useState<IFAQ[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -169,9 +138,8 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
     ? new Date(dropDateParam)
     : new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
   const dropTime = dropTimeParam || "10:00 AM";
-  const pickupLocation =
-    pickupLocationParam || "123 Main Street, City Center";
-  const dropLocation = dropLocationParam || "123 Main Street, City Center";
+  const pickupLocation = ` ${(vehicle?.store as IStore)?.address || ""}`;
+  const dropLocation = ` ${(vehicle?.store as IStore)?.address || ""}`;
 
   // Mock reviews (until reviews API is available)
   const reviews = [
@@ -202,6 +170,10 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
   }));
 
   const handleBookNow = () => {
+    /**
+     * @salman 
+     * never fail silently ensure that the user is indicated
+     */
     if (!vehicle) return;
     // Open the modal instead of navigating directly
     setIsModalOpen(true);
@@ -254,7 +226,21 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
     // You can add API call here to save favorite state
   };
 
-  const totalRent = vehicle.pricePerHour;
+  // const totalRent = vehicle.pricePerHour;
+  const ms = dropDate.getTime() - pickupDate.getTime();
+  const hours = ms / (1000 * 60 * 60);
+  const days = ms / (1000 * 60 * 60 * 24);
+
+  let totalRent;
+
+  if (hours < 24) {
+    // charge hourly
+    totalRent = vehicle.pricePerHour * Math.ceil(hours);
+  } else {
+    // charge daily
+    totalRent = vehicle.pricePerDay * Math.ceil(days);
+  }
+
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0B0A1B] pb-24 max-w-[430px] mx-auto">
