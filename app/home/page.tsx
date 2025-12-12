@@ -428,7 +428,8 @@ function HomePageContentInner() {
 
                             <Button
                                 onClick={updateFilters}
-                                className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] text-black font-semibold text-lg"
+                                disabled={!pickupDate || !pickupTime || !dropoffDate || !dropoffTime}
+                                className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] text-black font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Apply Filters
                             </Button>

@@ -226,7 +226,7 @@ export default function LandingPage() {
 
             <Button
               onClick={validateAndNavigate}
-              disabled={isRequestingLocation}
+              disabled={isRequestingLocation || !pickupDate || !pickupTime || !dropoffDate || !dropoffTime}
               className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] mt-24 text-black font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isRequestingLocation ? "Getting location..." : "Let's Drive"}
