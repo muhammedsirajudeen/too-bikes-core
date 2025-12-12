@@ -22,15 +22,15 @@ export default function PickupSelector({ pickup, date, time, onDateChange, onTim
   const [openDate, setOpenDate] = useState(false);
   const [openTime, setOpenTime] = useState(false);
 
-  // All available time slots
-  const allTimeSlots = [
-    "09:00", "10:00", "11:00",
-    "12:00", "13:00", "14:00",
-    "15:00", "16:00", "17:00",
-  ];
-
   // Filter time slots based on selected date
   const availableTimeSlots = useMemo(() => {
+    // All available time slots
+    const allTimeSlots = [
+      "09:00", "10:00", "11:00",
+      "12:00", "13:00", "14:00",
+      "15:00", "16:00", "17:00",
+    ];
+
     if (!date) return allTimeSlots;
 
     const now = new Date();

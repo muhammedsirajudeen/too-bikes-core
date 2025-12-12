@@ -304,7 +304,6 @@ function HomePageContentInner() {
             } catch {
                 // Fallback if date parsing fails
                 params.set("pickupTime", "10:00 AM");
-                console.error("Error parsing startTime:", e);
             }
         }
 
@@ -317,7 +316,6 @@ function HomePageContentInner() {
             } catch {
                 // Fallback if date parsing fails
                 params.set("dropTime", "10:00 AM");
-                console.error("Error parsing endTime:", e);
             }
         }
 
