@@ -37,10 +37,14 @@ export default function AuthModal({
     // Phone input state
     const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber);
     const [phoneError, setPhoneError] = useState<string>("");
+    const [otpGenerateSuccess, setOtpGenerateSuccess] = useState<string>("");
+    const [isGeneratingOTP, setIsGeneratingOTP] = useState(false);
 
     // OTP state
     const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
     const [otpError, setOtpError] = useState<string>("");
+    const [otpSuccess, setOtpSuccess] = useState<string>("");
+    const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
     const [timeLeft, setTimeLeft] = useState(59);
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -50,8 +54,10 @@ export default function AuthModal({
             setModalState("PHONE_INPUT");
             setPhoneNumber(initialPhoneNumber);
             setPhoneError("");
+            setOtpGenerateSuccess("");
             setOtp(["", "", "", "", "", ""]);
             setOtpError("");
+            setOtpSuccess("");
             setTimeLeft(59);
         }
     }, [isOpen, initialPhoneNumber]);
@@ -86,20 +92,49 @@ export default function AuthModal({
         if (value.length <= 10) {
             setPhoneNumber(value);
             if (phoneError) setPhoneError(""); // Clear error on type
+            if (otpGenerateSuccess) setOtpGenerateSuccess(""); // Clear success message
         }
     };
 
-    const handlePhoneSubmit = () => {
+    const handlePhoneSubmit = async () => {
         try {
             phoneSchema.parse(phoneNumber);
-            // Transition to OTP state
-            setModalState("OTP_VERIFICATION");
-            setTimeLeft(59);
-            // TODO: Send OTP to the phone number via API
+            setIsGeneratingOTP(true);
+            setPhoneError("");
+            setOtpGenerateSuccess("");
+
+            // Call API to generate OTP
+            const response = await fetch("/api/v1/auth/generate-otp", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ phoneNumber }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                setPhoneError(data.message || "Failed to generate OTP");
+                return;
+            }
+
+            // Show success message
+            setOtpGenerateSuccess("OTP sent successfully to your WhatsApp");
+
+            // Transition to OTP state after a brief delay
+            setTimeout(() => {
+                setModalState("OTP_VERIFICATION");
+                setTimeLeft(59);
+            }, 800);
         } catch (err) {
             if (err instanceof z.ZodError) {
                 setPhoneError(err.issues[0].message);
+            } else {
+                setPhoneError("Failed to generate OTP. Please try again.");
             }
+        } finally {
+            setIsGeneratingOTP(false);
         }
     };
 
@@ -152,21 +187,75 @@ export default function AuthModal({
         }
     };
 
-    const handleOTPSubmit = (otpValue?: string) => {
+    const handleOTPSubmit = async (otpValue?: string) => {
         const otpString = otpValue || otp.join("");
         if (otpString.length !== 6) {
             setOtpError("Please enter complete OTP");
             return;
         }
-        onComplete(phoneNumber, otpString);
+
+        try {
+            setIsVerifyingOTP(true);
+            setOtpError("");
+            setOtpSuccess("");
+
+            // Call API to verify OTP
+            const response = await fetch("/api/v1/auth/verify-otp", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ phoneNumber, otp: otpString }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                setOtpError(data.message || "Invalid OTP");
+                return;
+            }
+
+            // Show success message
+            setOtpSuccess("OTP verified successfully!");
+
+            // Call onComplete after a brief delay
+            setTimeout(() => {
+                onComplete(phoneNumber, otpString);
+            }, 500);
+        } catch (err) {
+            setOtpError("Failed to verify OTP. Please try again.");
+        } finally {
+            setIsVerifyingOTP(false);
+        }
     };
 
-    const handleResend = () => {
-        setTimeLeft(59);
-        setOtp(["", "", "", "", "", ""]);
-        setOtpError("");
-        inputRefs.current[0]?.focus();
-        // TODO: Trigger resend OTP API call
+    const handleResend = async () => {
+        try {
+            setOtpError("");
+            setOtpSuccess("");
+
+            // Call API to generate OTP again
+            const response = await fetch("/api/v1/auth/generate-otp", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ phoneNumber }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                setTimeLeft(59);
+                setOtp(["", "", "", "", "", ""]);
+                setOtpSuccess("OTP resent successfully");
+                inputRefs.current[0]?.focus();
+            } else {
+                setOtpError("Failed to resend OTP. Please try again.");
+            }
+        } catch (err) {
+            setOtpError("Failed to resend OTP. Please try again.");
+        }
     };
 
     const handleBack = () => {
@@ -323,16 +412,23 @@ export default function AuthModal({
                                             {phoneError}
                                         </p>
                                     )}
+
+                                    {/* Success Message */}
+                                    {otpGenerateSuccess && (
+                                        <p className="text-xs text-green-600 dark:text-green-500 animate-in slide-in-from-top-1 px-1">
+                                            {otpGenerateSuccess}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
                             {/* Submit Button - Aligned to bottom center */}
                             <Button
                                 onClick={handlePhoneSubmit}
-                                disabled={phoneNumber.length < 10}
-                                className="w-full max-w-[358px] bg-[#F4AA05] hover:bg-[#cf9002] text-white font-semibold text-lg px-8 py-6 rounded-full shadow-lg shadow-orange-500/20 mt-8 h-14"
+                                disabled={phoneNumber.length < 10 || isGeneratingOTP}
+                                className="w-full max-w-[358px] bg-[#F4AA05] hover:bg-[#cf9002] text-white font-semibold text-lg px-8 py-6 rounded-full shadow-lg shadow-orange-500/20 mt-8 h-14 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Generate OTP
+                                {isGeneratingOTP ? "Generating..." : "Generate OTP"}
                             </Button>
                         </div>
 
@@ -395,6 +491,13 @@ export default function AuthModal({
                                             {otpError}
                                         </p>
                                     )}
+
+                                    {/* Success Message */}
+                                    {otpSuccess && (
+                                        <p className="text-sm text-green-600 dark:text-green-500 text-center animate-in slide-in-from-top-1">
+                                            {otpSuccess}
+                                        </p>
+                                    )}
                                 </div>
 
                                 {/* Timer and Resend */}
@@ -416,10 +519,10 @@ export default function AuthModal({
                                 {/* Submit Button */}
                                 <Button
                                     onClick={() => handleOTPSubmit()}
-                                    disabled={otp.some((digit) => digit === "")}
-                                    className="w-full bg-[#F4AA05] hover:bg-[#cf9002] text-white font-semibold text-lg px-8 py-6 rounded-full shadow-lg shadow-orange-500/20 h-14"
+                                    disabled={otp.some((digit) => digit === "") || isVerifyingOTP}
+                                    className="w-full bg-[#F4AA05] hover:bg-[#cf9002] text-white font-semibold text-lg px-8 py-6 rounded-full shadow-lg shadow-orange-500/20 h-14 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Verify OTP
+                                    {isVerifyingOTP ? "Verifying..." : "Verify OTP"}
                                 </Button>
                             </div>
                         </div>
