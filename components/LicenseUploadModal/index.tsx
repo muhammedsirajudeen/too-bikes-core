@@ -95,18 +95,54 @@ export default function LicenseUploadModal({
     };
 
     // Handle submit
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!frontImage || !backImage) {
             setError("Please upload both front and back photos of your license");
             return;
         }
 
         setIsSubmitting(true);
-        // In a real implementation, you would upload the images to your server here
-        setTimeout(() => {
-            onComplete(frontImage, backImage);
+        setError("");
+
+        try {
+            // Get access token from localStorage
+            const token = localStorage.getItem("auth_token");
+
+            if (!token) {
+                setError("You must be logged in to upload your license");
+                setIsSubmitting(false);
+                return;
+            }
+
+            // Create FormData for multipart upload
+            const formData = new FormData();
+            formData.append("frontImage", frontImage);
+            formData.append("backImage", backImage);
+
+            // Call the API
+            const response = await fetch("/api/v1/license/upload", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // Success - call onComplete callback
+                onComplete(frontImage, backImage);
+            } else {
+                // API returned an error
+                setError(data.message || "Failed to upload license. Please try again.");
+            }
+        } catch (error) {
+            console.error("License upload error:", error);
+            setError("An error occurred while uploading. Please check your connection and try again.");
+        } finally {
             setIsSubmitting(false);
-        }, 500);
+        }
     };
 
     // Handle close

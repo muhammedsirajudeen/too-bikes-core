@@ -2,13 +2,14 @@
 //frontImage link to image
 //backImage link to image
 import mongoose from "mongoose";
+import { models } from "mongoose";
 
 
 const userLicenseSchema = new mongoose.Schema({
     userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true
+        type: String, // Changed to String to support phoneNumber as userId
+        required: true,
+        index: true
     },
     frontImage: {
         type: String,
@@ -18,8 +19,9 @@ const userLicenseSchema = new mongoose.Schema({
         type: String,
         required: true
     }
-});
+}, { timestamps: true });
 
-const userLicenseModel = mongoose.model("UserLicense", userLicenseSchema);
+//implement singleton pattern
+const userLicenseModel = models.UserLicense || mongoose.model("UserLicense", userLicenseSchema);
 
 export default userLicenseModel;
