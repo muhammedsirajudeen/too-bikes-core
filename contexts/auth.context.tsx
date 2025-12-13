@@ -23,22 +23,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return !!token;
     }, []);
 
-    const requireAuth = useCallback(() => {
+    const requireAuth = useCallback((intendedPath: string) => {
         const isAuth = checkAuth();
 
         if (!isAuth) {
-            // User is not authenticated, show modal
+            // User is not authenticated, show modal and save intended destination
+            setIntendedDestination(intendedPath);
             setIsAuthModalOpen(true);
+        } else {
+            // User is already authenticated, navigate directly
+            router.push(intendedPath);
         }
-        // If authenticated, do nothing - let the caller handle navigation
-    }, [checkAuth]);
+    }, [checkAuth, router]);
 
     const handleAuthComplete = useCallback(() => {
-        // Just close the modal after successful auth
-        // User stays on current page and can decide where to go
+        // Close the modal
         setIsAuthModalOpen(false);
-        setIntendedDestination(null);
-    }, []);
+
+        // Navigate to intended destination if set
+        if (intendedDestination) {
+            router.push(intendedDestination);
+            setIntendedDestination(null);
+        }
+    }, [intendedDestination, router]);
 
     const handleAuthModalClose = useCallback(() => {
         setIsAuthModalOpen(false);
