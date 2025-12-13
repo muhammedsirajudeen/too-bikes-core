@@ -1,5 +1,8 @@
 "use client";
 
+import axiosInstance from "@/lib/axios";
+import axios from "axios";
+
 import { useEffect, useState, useRef } from "react";
 import { X, ArrowLeft } from "lucide-react";
 import {
@@ -104,17 +107,13 @@ export default function AuthModal({
             setOtpGenerateSuccess("");
 
             // Call API to generate OTP
-            const response = await fetch("/api/v1/auth/generate-otp", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ phoneNumber }),
+            const response = await axiosInstance.post("/api/v1/auth/generate-otp", {
+                phoneNumber,
             });
 
-            const data = await response.json();
+            const data = response.data;
 
-            if (!response.ok || !data.success) {
+            if (!data.success) {
                 setPhoneError(data.message || "Failed to generate OTP");
                 return;
             }
@@ -127,11 +126,16 @@ export default function AuthModal({
                 setModalState("OTP_VERIFICATION");
                 setTimeLeft(59);
             }, 800);
-        } catch (err) {
+        } catch (err: unknown) {
             if (err instanceof z.ZodError) {
                 setPhoneError(err.issues[0].message);
             } else {
-                setPhoneError("Failed to generate OTP. Please try again.");
+                // Handle Axios error structure
+                if (axios.isAxiosError(err) && err.response) {
+                    setPhoneError(err.response.data.message || "Failed to generate OTP");
+                } else {
+                    setPhoneError("Failed to generate OTP. Please try again.");
+                }
             }
         } finally {
             setIsGeneratingOTP(false);
@@ -200,18 +204,14 @@ export default function AuthModal({
             setOtpSuccess("");
 
             // Call API to verify OTP
-            const response = await fetch("/api/v1/auth/verify-otp", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ phoneNumber, otp: otpString }),
-                credentials: "include", // Important: include cookies in request
+            const response = await axiosInstance.post("/api/v1/auth/verify-otp", {
+                phoneNumber,
+                otp: otpString,
             });
 
-            const data = await response.json();
+            const data = response.data;
 
-            if (!response.ok || !data.success) {
+            if (!data.success) {
                 setOtpError(data.message || "Invalid OTP");
                 return;
             }
@@ -229,8 +229,13 @@ export default function AuthModal({
             setTimeout(() => {
                 onComplete(phoneNumber, otpString);
             }, 500);
-        } catch (err) {
-            setOtpError("Failed to verify OTP. Please try again.");
+        } catch (err: unknown) {
+            // Handle Axios error structure
+            if (axios.isAxiosError(err) && err.response) {
+                setOtpError(err.response.data.message || "Failed to verify OTP");
+            } else {
+                setOtpError("Failed to verify OTP. Please try again.");
+            }
         } finally {
             setIsVerifyingOTP(false);
         }
@@ -238,30 +243,34 @@ export default function AuthModal({
 
     const handleResend = async () => {
         try {
+            setIsGeneratingOTP(true); // Use isGeneratingOTP for resend as well
             setOtpError("");
             setOtpSuccess("");
 
             // Call API to generate OTP again
-            const response = await fetch("/api/v1/auth/generate-otp", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ phoneNumber }),
+            const response = await axiosInstance.post("/api/v1/auth/generate-otp", {
+                phoneNumber,
             });
 
-            const data = await response.json();
+            const data = response.data;
 
-            if (response.ok && data.success) {
+            if (data.success) {
                 setTimeLeft(59);
                 setOtp(["", "", "", "", "", ""]);
                 setOtpSuccess("OTP resent successfully");
                 inputRefs.current[0]?.focus();
             } else {
+                setOtpError(data.message || "Failed to resend OTP. Please try again.");
+            }
+        } catch (err: unknown) {
+            // Handle Axios error structure
+            if (axios.isAxiosError(err) && err.response) {
+                setOtpError(err.response.data.message || "Failed to resend OTP");
+            } else {
                 setOtpError("Failed to resend OTP. Please try again.");
             }
-        } catch (err) {
-            setOtpError("Failed to resend OTP. Please try again.");
+        } finally {
+            setIsGeneratingOTP(false);
         }
     };
 

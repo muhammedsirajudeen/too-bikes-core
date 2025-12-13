@@ -108,15 +108,15 @@ function HomePageContentInner() {
                 if (store) {
                     setSelectedStore(store);
                 }
-            } else if (!selectedStore && allStores.length > 0) {
-                // Auto-select nearest store based on user location
+            } else if (!selectedStore && allStores.length > 0 && !storesLoading) {
+                // Auto-select nearest store based on user location, or fallback to first store
                 findNearestStore();
             }
         } else {
             setError("Missing required parameters. Please start from the landing page.");
             setLoading(false);
         }
-    }, [searchParams, allStores]);
+    }, [searchParams, allStores, storesLoading]);
 
     // Find nearest store based on user's geolocation
     const findNearestStore = async () => {

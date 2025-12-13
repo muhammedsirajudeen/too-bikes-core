@@ -11,6 +11,7 @@ import ReviewsSection from "./(components)/ReviewsSection";
 import FAQAccordion from "./(components)/FAQAccordion";
 import BottomCTA from "./(components)/BottomCTA";
 import AuthModal from "@/components/AuthModal";
+import LicenseUploadModal from "@/components/LicenseUploadModal";
 import VehicleDetailSkeleton from "./(components)/VehicleDetailSkeleton";
 import { IFAQ } from "@/core/interface/model/IFaq.model";
 import { VehicleDetailResponse } from "@/app/api/v1/available-vehicles/[id]/route";
@@ -32,6 +33,8 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [isLicenseModalOpen, setIsLicenseModalOpen] = useState<boolean>(false);
+  const [userPhoneNumber, setUserPhoneNumber] = useState<string>("");
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
 
   // Get pickup/drop details from URL params or use defaults
@@ -166,13 +169,35 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
     answer: faq.answer,
   }));
 
-  const handleBookNow = () => {
+  const handleBookNow = async () => {
     /**
      * @salman 
      * never fail silently ensure that the user is indicated
      */
     if (!vehicle) return;
-    // Open the unified auth modal
+
+    // Check if user is already authenticated
+    const token = localStorage.getItem("auth_token");
+
+    if (token) {
+      try {
+        // Verify token with backend using axiosInstance (enables auto token refresh)
+        const response = await axiosInstance.get("/api/v1/auth/verify-token");
+
+        if (response.data.success) {
+          // User is authenticated, get phone number from token data
+          setUserPhoneNumber(response.data.user?.phoneNumber || "");
+          // Show license modal directly
+          setIsLicenseModalOpen(true);
+          return;
+        }
+      } catch (error) {
+        console.error("Token verification failed:", error);
+        // Token is invalid or refresh failed, continue to show auth modal
+      }
+    }
+
+    // User is not authenticated or token is invalid, show auth modal
     setIsAuthModalOpen(true);
   };
 
@@ -181,12 +206,24 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
   };
 
   const handleAuthComplete = (phoneNumber: string, otp: string) => {
-    // Here you can verify the OTP with your backend
+    // Store phone number and close auth modal
     console.log("Phone:", phoneNumber, "OTP:", otp);
+    setUserPhoneNumber(phoneNumber);
     setIsAuthModalOpen(false);
-    // Navigate to booking page after successful OTP verification
+    // Open license upload modal instead of navigating
+    setIsLicenseModalOpen(true);
+  };
+
+  const handleLicenseModalClose = () => {
+    setIsLicenseModalOpen(false);
+  };
+
+  const handleLicenseComplete = (frontImage: File, backImage: File) => {
+    console.log("License uploaded:", frontImage.name, backImage.name);
+    setIsLicenseModalOpen(false);
+    // Navigate to booking page after license upload
     router.push(
-      `/booking/${id}?pickupDate=${pickupDate.toISOString()}&dropDate=${dropDate.toISOString()}&phone=${encodeURIComponent(phoneNumber)}`
+      `/booking/${id}?pickupDate=${pickupDate.toISOString()}&dropDate=${dropDate.toISOString()}&phone=${encodeURIComponent(userPhoneNumber)}`
     );
   };
 
@@ -275,6 +312,13 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
         isOpen={isAuthModalOpen}
         onClose={handleAuthModalClose}
         onComplete={handleAuthComplete}
+      />
+
+      {/* License Upload Modal */}
+      <LicenseUploadModal
+        isOpen={isLicenseModalOpen}
+        onClose={handleLicenseModalClose}
+        onComplete={handleLicenseComplete}
       />
     </div>
   );

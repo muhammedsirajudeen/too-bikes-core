@@ -38,9 +38,32 @@ export default function LandingPage() {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
 
+  // Store state
+  const [stores, setStores] = useState<any[]>([]);
+  const [selectedStore, setSelectedStore] = useState<any | null>(null);
+  const [storesLoading, setStoresLoading] = useState(true);
+
   useEffect(() => {
     setMounted(true);
+    // Fetch stores on mount
+    fetchStores();
   }, []);
+
+  const fetchStores = async () => {
+    try {
+      const response = await fetch('/api/v1/stores');
+      const data = await response.json();
+      if (data.success && data.data && data.data.length > 0) {
+        setStores(data.data);
+        // Auto-select first store as default
+        setSelectedStore(data.data[0]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stores:', error);
+    } finally {
+      setStoresLoading(false);
+    }
+  };
 
   if (!mounted) return null;
 
@@ -67,13 +90,13 @@ export default function LandingPage() {
           let errorMsg = "Unable to get your location";
           switch (error.code) {
             case error.PERMISSION_DENIED:
-              errorMsg = "Location permission denied. Please enter location manually.";
+              errorMsg = "Location permission denied. You'll see all available vehicles.";
               break;
             case error.POSITION_UNAVAILABLE:
-              errorMsg = "Location information unavailable.";
+              errorMsg = "Location unavailable. You'll see all available vehicles.";
               break;
             case error.TIMEOUT:
-              errorMsg = "Location request timed out.";
+              errorMsg = "Location request timed out. You'll see all available vehicles.";
               break;
           }
           setLocationError(errorMsg);
@@ -130,29 +153,31 @@ export default function LandingPage() {
 
     if (!isValid) return;
 
-    // Get location
+    // Get location (optional)
     let finalLocation = location;
     if (!finalLocation) {
       finalLocation = await getLocation();
-    }
-
-    // If location is still null, show error but allow manual entry
-    // For now, we'll use a default location or show error
-    if (!finalLocation) {
-      setLocationError("Location is required. Please allow location access or enter manually.");
-      return;
     }
 
     // Build query params
     const params = new URLSearchParams({
       startTime: pickupDateTime.toISOString(),
       endTime: dropoffDateTime.toISOString(),
-      latitude: finalLocation.lat.toString(),
-      longitude: finalLocation.lng.toString(),
-      radiusKm: "50", // Default radius
       page: "1",
       limit: "10"
     });
+
+    // Add storeId (required for home page)
+    if (selectedStore) {
+      params.append("storeId", selectedStore._id.toString());
+    }
+
+    // Add location params only if available
+    if (finalLocation) {
+      params.append("latitude", finalLocation.lat.toString());
+      params.append("longitude", finalLocation.lng.toString());
+      params.append("radiusKm", "50"); // Default radius
+    }
 
     // Navigate to vehicle listing page
     router.push(`${ROUTE_CONSTANTS.HOME}?${params.toString()}`);
@@ -209,16 +234,13 @@ export default function LandingPage() {
               minDate={pickupDate}
             />
 
-            {locationError && (
-              <p className="text-red-500 text-sm mt-2 px-2">{locationError}</p>
-            )}
 
             <Button
               onClick={validateAndNavigate}
-              disabled={isRequestingLocation || !pickupDate || !pickupTime || !dropoffDate || !dropoffTime}
+              disabled={isRequestingLocation || storesLoading || !selectedStore || !pickupDate || !pickupTime || !dropoffDate || !dropoffTime}
               className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] mt-24 text-black font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isRequestingLocation ? "Getting location..." : "Let's Drive"}
+              {isRequestingLocation ? "Getting location..." : storesLoading ? "Loading..." : "Let's Drive"}
             </Button>
           </CardContent>
         </Card>
