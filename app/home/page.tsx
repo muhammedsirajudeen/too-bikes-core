@@ -580,19 +580,11 @@ function HomePageContentInner() {
 
                                             {/* Pricing - Compact gradient card */}
                                             <div className="relative mb-2.5 py-2">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-baseline gap-1">
-                                                        <span className="text-xl font-bold text-[#FF6B00]">
-                                                            ₹{vehicle.pricePerHour}
-                                                        </span>
-                                                        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">/hr</span>
-                                                    </div>
-                                                    <div className="flex items-baseline gap-1">
-                                                        <span className="text-base font-semibold text-[#FF6B00]">
-                                                            ₹{vehicle.pricePerDay}
-                                                        </span>
-                                                        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">/day</span>
-                                                    </div>
+                                                <div className="flex items-baseline gap-1">
+                                                    <span className="text-xl font-bold text-[#FF6B00]">
+                                                        ₹{vehicle.pricePerDay}
+                                                    </span>
+                                                    <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">/day</span>
                                                 </div>
                                             </div>
 

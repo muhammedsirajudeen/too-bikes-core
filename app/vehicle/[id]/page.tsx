@@ -10,7 +10,7 @@ import PickupDropSection from "./(components)/PickupDropSection";
 import ReviewsSection from "./(components)/ReviewsSection";
 import FAQAccordion from "./(components)/FAQAccordion";
 import BottomCTA from "./(components)/BottomCTA";
-import BookNowModal from "@/components/BookNowModal";
+import AuthModal from "@/components/AuthModal";
 import VehicleDetailSkeleton from "./(components)/VehicleDetailSkeleton";
 import { IFAQ } from "@/core/interface/model/IFaq.model";
 import { VehicleDetailResponse } from "@/app/api/v1/available-vehicles/[id]/route";
@@ -31,8 +31,7 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
   const [faqs, setFaqs] = useState<IFAQ[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
 
   // Get pickup/drop details from URL params or use defaults
@@ -175,22 +174,21 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
      * never fail silently ensure that the user is indicated
      */
     if (!vehicle) return;
-    // Open the modal instead of navigating directly
-    setIsModalOpen(true);
+    // Open the unified auth modal
+    setIsAuthModalOpen(true);
   };
 
-  const handleModalClose = () => {
-    setIsModalOpen(false);
+  const handleAuthModalClose = () => {
+    setIsAuthModalOpen(false);
   };
 
-  const handleModalSubmit = (phone: string) => {
-    setPhoneNumber(phone);
-    // Here you can add logic to send OTP or proceed with booking
-    // For now, we'll just close the modal and navigate
-    setIsModalOpen(false);
-    // Navigate to booking page with phone number
+  const handleAuthComplete = (phoneNumber: string, otp: string) => {
+    // Here you can verify the OTP with your backend
+    console.log("Phone:", phoneNumber, "OTP:", otp);
+    setIsAuthModalOpen(false);
+    // Navigate to booking page after successful OTP verification
     router.push(
-      `/booking/${id}?pickupDate=${pickupDate.toISOString()}&dropDate=${dropDate.toISOString()}&phone=${encodeURIComponent(phone)}`
+      `/booking/${id}?pickupDate=${pickupDate.toISOString()}&dropDate=${dropDate.toISOString()}&phone=${encodeURIComponent(phoneNumber)}`
     );
   };
 
@@ -231,15 +229,8 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
   const hours = ms / (1000 * 60 * 60);
   const days = ms / (1000 * 60 * 60 * 24);
 
-  let totalRent;
-
-  if (hours < 24) {
-    // charge hourly
-    totalRent = vehicle.pricePerHour * Math.ceil(hours);
-  } else {
-    // charge daily
-    totalRent = vehicle.pricePerDay * Math.ceil(days);
-  }
+  // Always charge daily rate
+  const totalRent = vehicle.pricePerDay * Math.ceil(days);
 
 
   return (
@@ -283,12 +274,11 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
       {/* Bottom CTA */}
       <BottomCTA totalRent={totalRent} onBookNow={handleBookNow} />
 
-      {/* Book Now Modal */}
-      <BookNowModal
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        onSubmit={handleModalSubmit}
-        phoneNumber={phoneNumber}
+      {/* Unified Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={handleAuthModalClose}
+        onComplete={handleAuthComplete}
       />
     </div>
   );

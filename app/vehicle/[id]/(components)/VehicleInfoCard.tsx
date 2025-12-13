@@ -59,13 +59,8 @@ export default function VehicleInfoCard({
         </h1>
         <div className="text-right">
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            ₹{price}/hr
+            ₹{pricePerDay}/day
           </p>
-          {pricePerDay && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-              {pricePerDay}/day
-            </p>
-          )}
         </div>
       </div>
 

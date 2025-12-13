@@ -89,7 +89,7 @@ export default function VehicleImageSlider({
 
   const handleTouchEnd = () => {
     if (!touchStartX.current || !touchEndX.current) return;
-    
+
     const distance = touchStartX.current - touchEndX.current;
     const minSwipeDistance = 50;
 
@@ -109,7 +109,7 @@ export default function VehicleImageSlider({
   // Auto-scroll to current index on mount
   useEffect(() => {
     if (scrollContainerRef.current && images.length > 0) {
-      
+
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentIndex(0);
       scrollContainerRef.current.scrollTo({ left: 0, behavior: "auto" });
@@ -134,8 +134,8 @@ export default function VehicleImageSlider({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory w-full h-full cursor-grab active:cursor-grabbing"
-        style={{ 
-          scrollbarWidth: "none", 
+        style={{
+          scrollbarWidth: "none",
           msOverflowStyle: "none",
           WebkitOverflowScrolling: "touch"
         }}
@@ -145,13 +145,13 @@ export default function VehicleImageSlider({
             key={index}
             className="min-w-full h-full relative snap-start flex items-center justify-center flex-shrink-0"
           >
-            <div className="relative w-[calc(100%-24px)] h-[218px] mt-[72px]">
+            <div className="relative w-full h-full">
               <Image
                 src={image || "/bike.png"}
                 alt={`${vehicleName} - Image ${index + 1}`}
                 fill
-                className="object-cover rounded-lg"
-                sizes="(max-width: 430px) 364px, 364px"
+                className="object-cover"
+                sizes="(max-width: 430px) 100vw, 430px"
                 priority={index === 0}
               />
             </div>
@@ -190,18 +190,16 @@ export default function VehicleImageSlider({
           onClick={handleFavoriteToggle}
           onMouseDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
-          className={`w-9 h-9 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-            isFavorite ? "bg-red-50 border-red-200" : ""
-          }`}
+          className={`w-9 h-9 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isFavorite ? "bg-red-50 border-red-200" : ""
+            }`}
           aria-label="Add to favorites"
           type="button"
         >
           <Heart
-            className={`w-5 h-5 ${
-              isFavorite
+            className={`w-5 h-5 ${isFavorite
                 ? "fill-red-500 text-red-500"
                 : "text-gray-700 dark:text-gray-300"
-            }`}
+              }`}
           />
         </button>
       </div>
@@ -213,11 +211,10 @@ export default function VehicleImageSlider({
             <button
               key={index}
               onClick={() => goToSlide(index)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                index === currentIndex
+              className={`w-2 h-2 rounded-full transition-all ${index === currentIndex
                   ? "bg-gray-900 dark:bg-gray-100"
                   : "bg-gray-400 dark:bg-gray-500"
-              }`}
+                }`}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}
