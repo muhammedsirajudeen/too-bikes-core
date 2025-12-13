@@ -499,10 +499,9 @@ function OrderReviewPage() {
                                     Front Side
                                 </p>
                                 <div className="relative w-full aspect-[3/2] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                                    <Image
+                                    <img
                                         src={license.frontImageUrl}
                                         alt="License Front"
-                                        fill
                                         className="object-cover"
                                     />
                                 </div>
