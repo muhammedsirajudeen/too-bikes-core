@@ -9,6 +9,8 @@ const s3Client = new S3Client({
         accessKeyId: env.AWS_ACCESS_KEY_ID,
         secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
     },
+    // Force path-style addressing for S3 buckets
+    forcePathStyle: false,
 });
 
 export interface UploadToS3Params {
