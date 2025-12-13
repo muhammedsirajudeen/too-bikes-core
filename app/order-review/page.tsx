@@ -561,6 +561,13 @@ export default function OrderReviewPage() {
                     Go Back
                 </Button>
             </div>
+
+            {/* License Upload Modal */}
+            <LicenseUploadModal
+                isOpen={isLicenseModalOpen}
+                onClose={handleLicenseModalClose}
+                onComplete={handleLicenseComplete}
+            />
         </div>
     );
 }

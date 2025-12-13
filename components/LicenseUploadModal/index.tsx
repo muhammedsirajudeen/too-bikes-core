@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { X } from "lucide-react";
 import {
     Drawer,
@@ -42,6 +42,18 @@ export default function LicenseUploadModal({
     const backCameraInputRef = useRef<HTMLInputElement>(null);
 
     const acceptedTypes = getAcceptedFileTypes();
+
+    // Reset state when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setFrontImage(null);
+            setBackImage(null);
+            setFrontPreview("");
+            setBackPreview("");
+            setError("");
+            setIsSubmitting(false);
+        }
+    }, [isOpen]);
 
     // Handle file selection
     const handleFileSelect = async (file: File, side: "front" | "back") => {
