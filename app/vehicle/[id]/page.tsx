@@ -34,7 +34,7 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
   const [error, setError] = useState<string>("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isLicenseModalOpen, setIsLicenseModalOpen] = useState<boolean>(false);
-  const [userPhoneNumber, setUserPhoneNumber] = useState<string>("");
+  const [_userPhoneNumber, setUserPhoneNumber] = useState<string>("");
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
 
   // Get pickup/drop details from URL params or use defaults
@@ -87,8 +87,8 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
       setVehicle(data.data.vehicle);
       setFaqs(data.data.FAQ || []);
       setError("");
-    } catch (err) {
-      const axiosError = err as AxiosError<{
+    } catch (_err) {
+      const axiosError = _err as AxiosError<{
         message?: string;
         error?: Array<{ message?: string; path?: string[] }>;
       }>;

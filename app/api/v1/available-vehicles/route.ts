@@ -2,7 +2,7 @@ import { HttpStatus } from "@/constants/status.constant";
 import { IVehicle } from "@/core/interface/model/IVehicle.model";
 import { IStore } from "@/core/interface/model/IStore.model";
 import { querySchema } from "@/lib/schemas/availableVehicles.schema";
-import { AvailableVehiclesService } from "@/services/client/available-vehicles.service";
+import { AvailableVehiclesService } from "@/services/server/available-vehicles.service";
 import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
 import { NextRequest, NextResponse } from "next/server";
 

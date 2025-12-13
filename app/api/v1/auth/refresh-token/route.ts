@@ -1,7 +1,7 @@
 import { HttpStatus } from "@/constants/status.constant";
 import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
 import { verifyRefreshToken, generateAccessToken, generateRefreshToken } from "@/utils/jwt.utils";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 export interface RefreshTokenResponse {
@@ -11,7 +11,7 @@ export interface RefreshTokenResponse {
     error?: string;
 }
 
-export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => {
+export const POST = withLoggingAndErrorHandling(async () => {
     // Get refresh token from HTTP-only cookie
     const cookieStore = await cookies();
     const refreshToken = cookieStore.get("refresh_token")?.value;
@@ -27,7 +27,7 @@ export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => 
         // Verify the refresh token
         const decoded = verifyRefreshToken(refreshToken);
 
-        if (!decoded || typeof decoded === 'string') {
+        if (!decoded || typeof decoded === 'string' || !decoded.id) {
             return NextResponse.json({
                 success: false,
                 message: "Invalid or expired refresh token",
@@ -35,8 +35,8 @@ export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => 
         }
 
         const phoneNumber = decoded.phoneNumber as string;
-        const userId = (decoded as any).id as string;
-        const userRole = (decoded as any).role as string;
+        const userId = decoded.id as string;
+        const userRole = decoded.role as string;
 
         // Generate new access token and refresh token with complete user data
         const payload = {

@@ -40,7 +40,7 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
         }
 
         // Extract userId from token
-        const userId = (decoded as any).id;
+        const userId = decoded.id;
 
         if (!userId) {
             console.error("Token payload missing userId:", decoded);

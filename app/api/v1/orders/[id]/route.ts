@@ -2,7 +2,6 @@ import { HttpStatus } from "@/constants/status.constant";
 import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
 import { OrderService } from "@/services/server/order.service";
 import { NextRequest, NextResponse } from "next/server";
-import { IOrder } from "@/core/interface/model/IOrder.model";
 import { IVehicle } from "@/core/interface/model/IVehicle.model";
 import { IStore } from "@/core/interface/model/IStore.model";
 import IUser from "@/core/interface/model/IUser.model";

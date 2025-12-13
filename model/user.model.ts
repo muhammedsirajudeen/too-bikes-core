@@ -40,8 +40,8 @@ userSchema.pre("save", async function () {
 });
 
 // Indexes
-userSchema.index({ phoneNumber: 1 }); // Primary lookup
-userSchema.index({ email: 1 });
-userSchema.index({ role: 1 });
+// userSchema.index({ phoneNumber: 1 }); // Primary lookup
+// userSchema.index({ email: 1 });
+// userSchema.index({ role: 1 });
 
 export const UserModel = models.User || model<IUser>("User", userSchema);

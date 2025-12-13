@@ -75,7 +75,7 @@ export default function LicenseUploadModal({
                 setBackImage(file);
                 setBackPreview(preview);
             }
-        } catch (err) {
+        } catch (_err) {
             setError("Failed to process the file. Please try again.");
         }
     };

@@ -42,8 +42,8 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
             success: true,
             message: "Token is valid",
             user: {
-                id: (decoded as any).id,
-                phoneNumber: decoded.phoneNumber as string,
+                id: decoded.id,
+                phoneNumber: decoded.phoneNumber,
             },
         }, { status: HttpStatus.OK });
     } catch (error) {

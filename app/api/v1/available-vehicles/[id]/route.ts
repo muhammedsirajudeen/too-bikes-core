@@ -3,7 +3,7 @@ import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
 import { NextRequest, NextResponse } from "next/server";
 import { IFAQ } from "@/core/interface/model/IFaq.model";
 import { FaqService } from "@/services/shared/faq.service";
-import { AvailableVehiclesService } from "@/services/client/available-vehicles.service";
+import { AvailableVehiclesService } from "@/services/server/available-vehicles.service";
 import { IVehicle } from "@/core/interface/model/IVehicle.model";
 
 export interface VehicleDetailResponse {
@@ -16,14 +16,14 @@ export interface VehicleDetailResponse {
   error?: Array<{ message?: string; path?: string[] }>;
 }
 
-const faqService = new FaqService();    
+const faqService = new FaqService();
 const availableVehiclesService = new AvailableVehiclesService();
 
 // GET /availableVehicle/[id]
 export const GET = withLoggingAndErrorHandling(
   async (request: NextRequest) => {
     const id = request.nextUrl.pathname.split('/').pop();
-    if(!id){
+    if (!id) {
       return NextResponse.json({
         success: false,
         message: "Vehicle ID is required",

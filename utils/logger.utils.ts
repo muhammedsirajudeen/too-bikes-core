@@ -13,11 +13,11 @@ const createWinstonLogger = (): Logger | Console => {
 
   try {
     const winston = require('winston');
-    const DailyRotateFile = require('winston-daily-rotate-file');
-    const { combine, timestamp, colorize, errors, format: winstonFormat } = winston;
+    // const DailyRotateFile = require('winston-daily-rotate-file');
+    const { format } = winston;
 
     // Custom log format using winston's TransformableInfo
-    const logFormat = winstonFormat.printf((info: unknown) => {
+    const logFormat = format.printf((info: unknown) => {
       const { level, message, timestamp: ts, stack } = info as {
         level: string;
         message: string;
@@ -29,22 +29,22 @@ const createWinstonLogger = (): Logger | Console => {
 
     return winston.createLogger({
       level: 'debug',
-      format: combine(
-        colorize(),
-        timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-        errors({ stack: true }),
+      format: format.combine(
+        format.colorize(),
+        format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+        format.errors({ stack: true }),
         logFormat
       ),
-      // transports: [
-      //   new winston.transports.Console(),
-      //   new DailyRotateFile({
-      //     filename: 'logs/error-%DATE%.log',
-      //     datePattern: 'YYYY-MM-DD',
-      //     level: 'error',
-      //     maxFiles: env.ERROR_LOG_RETENTION_PERIOD,
-      //     zippedArchive: false,
-      //   }),
-      // ],
+      transports: [
+        new winston.transports.Console(),
+        // new DailyRotateFile({
+        //   filename: 'logs/error-%DATE%.log',
+        //   datePattern: 'YYYY-MM-DD',
+        //   level: 'error',
+        //   maxFiles: env.ERROR_LOG_RETENTION_PERIOD,
+        //   zippedArchive: false,
+        // }),
+      ],
     });
   } catch (error) {
     // Fallback to console if winston fails to load

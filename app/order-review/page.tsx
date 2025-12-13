@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axiosInstance from "@/lib/axios";
 import { AxiosError } from "axios";
@@ -39,7 +39,7 @@ interface LicenseData {
     backImageUrl: string;
 }
 
-export default function OrderReviewPage() {
+function OrderReviewPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -569,5 +569,24 @@ export default function OrderReviewPage() {
                 onComplete={handleLicenseComplete}
             />
         </div>
+    );
+}
+
+// Wrap with Suspense for Next.js 15 compatibility
+export default function OrderReviewPageWrapper() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gray-50 dark:bg-[#0B0A1B] pb-24 max-w-[430px] mx-auto">
+                <div className="px-4 pt-8">
+                    <div className="animate-pulse space-y-6">
+                        <div className="h-24 bg-gray-200 dark:bg-gray-800 rounded-2xl"></div>
+                        <div className="h-48 bg-gray-200 dark:bg-gray-800 rounded-2xl"></div>
+                        <div className="h-32 bg-gray-200 dark:bg-gray-800 rounded-2xl"></div>
+                    </div>
+                </div>
+            </div>
+        }>
+            <OrderReviewPage />
+        </Suspense>
     );
 }
