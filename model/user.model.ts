@@ -4,11 +4,19 @@ import { hashPassword } from "@/utils";
 
 const userSchema = new Schema<IUser>(
   {
-    name: { type: String, required: true, unique: true, trim: true },
-    email: {
+    phoneNumber: {
       type: String,
       required: true,
       unique: true,
+      trim: true,
+      match: [/^[6-9]\d{9}$/, "Please provide a valid Indian phone number"],
+    },
+    name: { type: String, required: false, trim: true },
+    email: {
+      type: String,
+      required: false,
+      unique: true,
+      sparse: true, // Allows multiple null values
       trim: true,
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, "Please provide a valid email address"],
@@ -32,6 +40,7 @@ userSchema.pre("save", async function () {
 });
 
 // Indexes
+userSchema.index({ phoneNumber: 1 }); // Primary lookup
 userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 

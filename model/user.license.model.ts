@@ -7,7 +7,8 @@ import { models } from "mongoose";
 
 const userLicenseSchema = new mongoose.Schema({
     userId: {
-        type: String, // Changed to String to support phoneNumber as userId
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
         required: true,
         index: true
     },

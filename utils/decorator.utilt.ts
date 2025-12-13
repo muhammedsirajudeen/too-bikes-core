@@ -3,10 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { ValidationError } from "./validation.util";
 import { connectDb } from "@/config/mongo.config";
 
-export function withLoggingAndErrorHandling(
-  handler: (request: NextRequest) => Promise<NextResponse>
+export function withLoggingAndErrorHandling<T extends unknown[] = []>(
+  handler: (request: NextRequest, ...args: T) => Promise<NextResponse>
 ) {
-  return async (request: NextRequest): Promise<NextResponse> => {
+  return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
     console.log(`[Request] ${request.method} ${request.url}`);
 
     if (mongoose.connection.readyState === 0) {
@@ -37,7 +37,7 @@ export function withLoggingAndErrorHandling(
     }
 
     try {
-      const response = await handler(request);
+      const response = await handler(request, ...args);
       console.log(`[Response] Status: ${response.status}`);
       return response;
     } catch (error) {

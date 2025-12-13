@@ -1,6 +1,7 @@
 import { HttpStatus } from "@/constants/status.constant";
 import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
 import { generateAccessToken, generateRefreshToken } from "@/utils/jwt.utils";
+import { UserService } from "@/services/server/user.service";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -17,8 +18,15 @@ export interface VerifyOTPResponse {
     success: boolean;
     message: string;
     token?: string; // Access token in response body
+    user?: {
+        id: string;
+        phoneNumber: string;
+        role: string;
+    };
     error?: Array<{ message?: string; path?: string[] }>;
 }
+
+const userService = new UserService();
 
 export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => {
     const body = await request.json();
@@ -40,24 +48,35 @@ export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => 
         }, { status: HttpStatus.UNAUTHORIZED });
     }
 
-    // Generate JWT tokens with phone number
-    const payload = { phoneNumber: validated.data.phoneNumber };
+    // Find or create user by phone number
+    const userResult = await userService.findOrCreateUser(validated.data.phoneNumber);
+
+    if (!userResult.success || !userResult.user) {
+        return NextResponse.json({
+            success: false,
+            message: userResult.message || "Failed to process user",
+        }, { status: HttpStatus.INTERNAL_SERVER_ERROR });
+    }
+
+    // Generate JWT tokens with user ID, phone number, and role
+    const payload = {
+        id: userResult.user.id,
+        phoneNumber: userResult.user.phoneNumber,
+        role: userResult.user.role,
+    };
     const token = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
-
-    // In a real implementation, you would:
-    // 1. Check if OTP exists in database/cache
-    // 2. Verify it hasn't expired
-    // 3. Mark it as used
-    // 4. Create/update user record
-    // 5. Create user session
-    // 6. Store refresh token in database for rotation/revocation
 
     // Create response with access token in body
     const response = NextResponse.json({
         success: true,
         message: "OTP verified successfully",
         token, // Access token in response body for Authorization headers
+        user: {
+            id: userResult.user.id,
+            phoneNumber: userResult.user.phoneNumber,
+            role: userResult.user.role,
+        },
     }, { status: HttpStatus.OK });
 
     // Set only refresh token as HTTP-only cookie (more secure)

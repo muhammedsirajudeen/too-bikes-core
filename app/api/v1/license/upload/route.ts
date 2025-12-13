@@ -36,20 +36,15 @@ export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => 
         } as UploadLicenseResponse, { status: HttpStatus.UNAUTHORIZED });
     }
 
-    // Extract phone number from token (current auth system uses phoneNumber)
-    const phoneNumber = (decoded as { phoneNumber?: string }).phoneNumber;
+    // Extract user ID from token (JWT now contains id field)
+    const userId = (decoded as { id?: string }).id;
 
-    if (!phoneNumber) {
+    if (!userId) {
         return NextResponse.json({
             success: false,
-            message: "Invalid token payload - phone number missing",
+            message: "Invalid token payload - user ID missing",
         } as UploadLicenseResponse, { status: HttpStatus.UNAUTHORIZED });
     }
-
-    // For now, use phoneNumber as the userId for the license
-    // In a production system, you would look up or create a User record here
-    // and use the actual user ID from the database
-    const userId = phoneNumber;
 
     try {
         // Parse multipart form data

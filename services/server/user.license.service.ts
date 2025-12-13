@@ -1,5 +1,6 @@
 import { uploadMultipleToS3, deleteFromS3 } from "@/utils/s3.utils";
 import { UserLicenseRepository } from "@/repository/user.license.repository";
+import { Types } from "mongoose";
 import logger from "@/utils/logger.utils";
 
 export interface UploadLicenseParams {
@@ -60,6 +61,10 @@ export class UserLicenseService {
         let backImageKey: string | null = null;
 
         try {
+            // Check if user already has a license
+            const userObjectId = new Types.ObjectId(userId);
+            const existingLicense = await this.licenseRepo.findByUserId(userObjectId);
+
             // Upload both images to S3 with automatic rollback on failure
             logger.info(`Uploading license images for user ${userId}`);
 
@@ -83,16 +88,29 @@ export class UserLicenseService {
 
             // Save S3 keys to database (upsert - create or update)
             const license = await this.licenseRepo.upsertLicense(
-                userId, // userId is now phoneNumber (string)
+                userObjectId,
                 frontImageKey,
                 backImageKey
             );
+
+            // If there was an existing license, delete the old images from S3
+            if (existingLicense) {
+                logger.info(`Deleting old license images for user ${userId}`);
+                try {
+                    await deleteFromS3(existingLicense.frontImage);
+                    await deleteFromS3(existingLicense.backImage);
+                    logger.info(`Old license images deleted successfully`);
+                } catch (deleteError) {
+                    // Log error but don't fail the operation since new license is already saved
+                    logger.error("Failed to delete old license images:", deleteError);
+                }
+            }
 
             logger.info(`License uploaded successfully for user ${userId}, license ID: ${license._id}`);
 
             return {
                 success: true,
-                message: "License uploaded successfully",
+                message: existingLicense ? "License updated successfully" : "License uploaded successfully",
                 licenseId: license._id.toString(),
             };
         } catch (error) {
@@ -118,7 +136,8 @@ export class UserLicenseService {
      */
     async getUserLicense(userId: string) {
         try {
-            const license = await this.licenseRepo.findByUserId(userId);
+            const userObjectId = new Types.ObjectId(userId);
+            const license = await this.licenseRepo.findByUserId(userObjectId);
 
             if (!license) {
                 return {

@@ -1,6 +1,13 @@
+"use client";
+
 import { Home, Heart, User, History } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth.context";
 
 export default function Navbar() {
+  const router = useRouter();
+  const { requireAuth } = useAuth();
+
   return (
     <div className="
       fixed bottom-0 left-0 w-full 
@@ -24,10 +31,21 @@ export default function Navbar() {
         <p className="text-xs mt-1">Order History</p>
       </div>
 
-      <div className="flex flex-col items-center text-gray-400">
+      <button
+        onClick={() => {
+          requireAuth();
+          // If user is authenticated, navigate to profile
+          // If not, modal will show and close after auth
+          const token = localStorage.getItem("auth_token");
+          if (token) {
+            router.push("/profile");
+          }
+        }}
+        className="flex flex-col items-center text-gray-400 hover:text-[#FF6B00] transition-colors"
+      >
         <User className="w-6 h-6" />
         <p className="text-xs mt-1">Profile</p>
-      </div>
+      </button>
     </div>
   );
 }

@@ -1,10 +1,11 @@
-import {  Document, ObjectId } from 'mongoose';
+import { Document, ObjectId } from 'mongoose';
 
 // User Interface
 export interface IUser extends Document {
-  name: string;
-  email: string;
-  password: string;
+  phoneNumber: string; // Primary identifier for OTP-based auth
+  name?: string; // Optional - may not be provided initially
+  email?: string; // Optional - may not be provided initially
+  password?: string; // Optional - not used for OTP auth
   role: "client" | "trainer" | "admin";
   isBlocked: boolean;
   createdAt: Date;

@@ -185,9 +185,20 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
         const response = await axiosInstance.get("/api/v1/auth/verify-token");
 
         if (response.data.success) {
-          // User is authenticated, get phone number from token data
+          // User is authenticated, get user info from token data
           setUserPhoneNumber(response.data.user?.phoneNumber || "");
-          // Show license modal directly
+
+          // Check if user has already uploaded license
+          const licenseCheckResponse = await axiosInstance.get("/api/v1/license/check");
+
+          if (licenseCheckResponse.data.success && licenseCheckResponse.data.hasLicense) {
+            // User has already uploaded license, navigate to review page
+            const reviewUrl = `/order-review?vehicleId=${id}&startTime=${encodeURIComponent(pickupDate.toISOString())}&endTime=${encodeURIComponent(dropDate.toISOString())}&totalAmount=${totalRent}`;
+            router.push(reviewUrl);
+            return;
+          }
+
+          // User hasn't uploaded license yet, show license modal
           setIsLicenseModalOpen(true);
           return;
         }
@@ -205,12 +216,28 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
     setIsAuthModalOpen(false);
   };
 
-  const handleAuthComplete = (phoneNumber: string, otp: string) => {
+  const handleAuthComplete = async (phoneNumber: string, otp: string) => {
     // Store phone number and close auth modal
     console.log("Phone:", phoneNumber, "OTP:", otp);
     setUserPhoneNumber(phoneNumber);
     setIsAuthModalOpen(false);
-    // Open license upload modal instead of navigating
+
+    try {
+      // Check if user has already uploaded license
+      const licenseCheckResponse = await axiosInstance.get("/api/v1/license/check");
+
+      if (licenseCheckResponse.data.success && licenseCheckResponse.data.hasLicense) {
+        // User has already uploaded license, navigate to review page
+        const reviewUrl = `/order-review?vehicleId=${id}&startTime=${encodeURIComponent(pickupDate.toISOString())}&endTime=${encodeURIComponent(dropDate.toISOString())}&totalAmount=${totalRent}`;
+        router.push(reviewUrl);
+        return;
+      }
+    } catch (error) {
+      console.error("Failed to check license status:", error);
+      // Continue to show license modal on error
+    }
+
+    // User hasn't uploaded license yet, show license upload modal
     setIsLicenseModalOpen(true);
   };
 
@@ -218,13 +245,13 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
     setIsLicenseModalOpen(false);
   };
 
-  const handleLicenseComplete = (frontImage: File, backImage: File) => {
+  const handleLicenseComplete = async (frontImage: File, backImage: File) => {
     console.log("License uploaded:", frontImage.name, backImage.name);
     setIsLicenseModalOpen(false);
-    // Navigate to booking page after license upload
-    router.push(
-      `/booking/${id}?pickupDate=${pickupDate.toISOString()}&dropDate=${dropDate.toISOString()}&phone=${encodeURIComponent(userPhoneNumber)}`
-    );
+
+    // Navigate to order review page with order details
+    const reviewUrl = `/order-review?vehicleId=${id}&startTime=${encodeURIComponent(pickupDate.toISOString())}&endTime=${encodeURIComponent(dropDate.toISOString())}&totalAmount=${totalRent}`;
+    router.push(reviewUrl);
   };
 
   // Loading state

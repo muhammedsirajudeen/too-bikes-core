@@ -35,10 +35,17 @@ export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => 
         }
 
         const phoneNumber = decoded.phoneNumber as string;
+        const userId = (decoded as any).id as string;
+        const userRole = (decoded as any).role as string;
 
-        // Generate new access token and refresh token
-        const newAccessToken = generateAccessToken({ phoneNumber });
-        const newRefreshToken = generateRefreshToken({ phoneNumber });
+        // Generate new access token and refresh token with complete user data
+        const payload = {
+            id: userId,
+            phoneNumber: phoneNumber,
+            role: userRole,
+        };
+        const newAccessToken = generateAccessToken(payload);
+        const newRefreshToken = generateRefreshToken(payload);
 
         // Create response
         const response = NextResponse.json({

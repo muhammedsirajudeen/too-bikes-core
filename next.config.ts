@@ -27,6 +27,16 @@ const nextConfig: NextConfig = {
         hostname: '**.purepng.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'toobikes-assets.s3.ap-south-1.amazonaws.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.s3.ap-south-1.amazonaws.com',
+        pathname: '/**',
+      },
     ],
   },
   // Set outputFileTracingRoot to fix workspace root warning

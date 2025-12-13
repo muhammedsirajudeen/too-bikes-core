@@ -1,17 +1,17 @@
 import { HttpStatus } from "@/constants/status.constant";
 import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
 import { verifyAccessToken } from "@/utils/jwt.utils";
+import { UserLicenseService } from "@/services/server/user.license.service";
 import { NextRequest, NextResponse } from "next/server";
 
-export interface VerifyTokenResponse {
+export interface CheckLicenseResponse {
     success: boolean;
     message: string;
-    user?: {
-        id: string;
-        phoneNumber: string;
-    };
+    hasLicense: boolean;
     error?: string;
 }
+
+const licenseService = new UserLicenseService();
 
 export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
     // Extract token from Authorization header
@@ -21,6 +21,7 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
         return NextResponse.json({
             success: false,
             message: "No authorization token provided",
+            hasLicense: false,
         }, { status: HttpStatus.UNAUTHORIZED });
     }
 
@@ -34,23 +35,38 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
             return NextResponse.json({
                 success: false,
                 message: "Invalid or expired token",
+                hasLicense: false,
             }, { status: HttpStatus.UNAUTHORIZED });
         }
 
-        // Token is valid, return user info
+        // Extract userId from token
+        const userId = (decoded as any).id;
+
+        if (!userId) {
+            console.error("Token payload missing userId:", decoded);
+            return NextResponse.json({
+                success: false,
+                message: "Invalid token payload - please log in again",
+                hasLicense: false,
+            }, { status: HttpStatus.UNAUTHORIZED });
+        }
+
+        console.log("Checking license for userId:", userId);
+
+        // Check if user has uploaded license
+        const licenseResult = await licenseService.getUserLicense(userId);
+
         return NextResponse.json({
             success: true,
-            message: "Token is valid",
-            user: {
-                id: (decoded as any).id,
-                phoneNumber: decoded.phoneNumber as string,
-            },
+            message: "License check completed",
+            hasLicense: licenseResult.success,
         }, { status: HttpStatus.OK });
     } catch (error) {
         return NextResponse.json({
             success: false,
-            message: "Invalid token",
+            message: "Failed to check license status",
+            hasLicense: false,
             error: error instanceof Error ? error.message : "Unknown error",
-        }, { status: HttpStatus.UNAUTHORIZED });
+        }, { status: HttpStatus.INTERNAL_SERVER_ERROR });
     }
 });

@@ -1,10 +1,9 @@
 import { BaseRepository } from "./base.respository";
 import userLicenseModel from "@/model/user.license.model";
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
 
-// Define the interface for the license document
 export interface IUserLicense extends Document {
-    userId: string;
+    userId: Types.ObjectId; // Reference to User model
     frontImage: string;
     backImage: string;
     createdAt?: Date;
@@ -17,23 +16,23 @@ export class UserLicenseRepository extends BaseRepository<IUserLicense> {
     }
 
     /**
-     * Find license by user ID (phoneNumber)
-     * @param userId - User's phone number
+     * Find license by user ID
+     * @param userId - User's ObjectId
      * @returns User license document or null
      */
-    async findByUserId(userId: string): Promise<IUserLicense | null> {
+    async findByUserId(userId: Types.ObjectId): Promise<IUserLicense | null> {
         return this.findOne({ userId });
     }
 
     /**
      * Create a new license record
-     * @param userId - User's phone number
+     * @param userId - User's ObjectId
      * @param frontImageKey - S3 key for front image
      * @param backImageKey - S3 key for back image
      * @returns Created license document
      */
     async createLicense(
-        userId: string,
+        userId: Types.ObjectId,
         frontImageKey: string,
         backImageKey: string
     ): Promise<IUserLicense> {
@@ -46,13 +45,13 @@ export class UserLicenseRepository extends BaseRepository<IUserLicense> {
 
     /**
      * Update an existing license record
-     * @param userId - User's phone number
+     * @param userId - User's ObjectId
      * @param frontImageKey - S3 key for front image
      * @param backImageKey - S3 key for back image
      * @returns Updated license document or null
      */
     async updateLicense(
-        userId: string,
+        userId: Types.ObjectId,
         frontImageKey: string,
         backImageKey: string
     ): Promise<IUserLicense | null> {
@@ -68,13 +67,13 @@ export class UserLicenseRepository extends BaseRepository<IUserLicense> {
 
     /**
      * Create or update license (upsert operation)
-     * @param userId - User's phone number
+     * @param userId - User's ObjectId
      * @param frontImageKey - S3 key for front image
      * @param backImageKey - S3 key for back image
      * @returns License document
      */
     async upsertLicense(
-        userId: string,
+        userId: Types.ObjectId,
         frontImageKey: string,
         backImageKey: string
     ): Promise<IUserLicense> {
