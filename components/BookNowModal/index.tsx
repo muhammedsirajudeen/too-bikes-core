@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import {
   Drawer,
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { z } from "zod";
 
 interface BookNowModalProps {
   isOpen: boolean;
@@ -18,6 +19,8 @@ interface BookNowModalProps {
   phoneNumber?: string;
 }
 
+// Zod schema for Indian phone number
+const phoneSchema = z.string().regex(/^[6-9]\d{9}$/, "Invalid Indian phone number");
 
 export default function BookNowModal({
   isOpen,
@@ -26,46 +29,43 @@ export default function BookNowModal({
   phoneNumber: initialPhoneNumber = "",
 }: BookNowModalProps) {
   const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber);
+  const [error, setError] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMounted(true);
   }, []);
 
   useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       setPhoneNumber(initialPhoneNumber);
+      setError("");
     }
   }, [isOpen, initialPhoneNumber]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    // Only allow numeric values
-    if (value === "" || /^\d+$/.test(value)) {
+    const value = e.target.value.replace(/\D/g, ""); // Remove non-digits
+    if (value.length <= 10) {
       setPhoneNumber(value);
+      if (error) setError(""); // Clear error on type
     }
   };
 
   const handleSubmit = () => {
-    if (phoneNumber.trim().length >= 10) {
-      onSubmit(phoneNumber.trim());
-    }
-  };
-
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      setPhoneNumber(initialPhoneNumber);
-      onClose();
-    } else {
-      // Reset phone number when modal opens
-      setPhoneNumber(initialPhoneNumber);
+    try {
+      phoneSchema.parse(phoneNumber);
+      onSubmit(phoneNumber);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        setError(err.issues[0].message);
+      }
     }
   };
 
   const handleClose = () => {
     setPhoneNumber(initialPhoneNumber);
+    setError("");
     onClose();
   };
 
@@ -83,12 +83,11 @@ export default function BookNowModal({
           "max-w-[430px] mx-auto",
           "bg-white dark:bg-[#191B27] rounded-t-[20px]",
           "p-0 gap-0",
-          "focus:outline-none",
-          "data-vaul-drawer:transition-transform data-vaul-drawer:duration-2000 data-vaul-drawer:ease-out"
+          "focus:outline-none"
         )}
       >
         <div className="relative w-full h-[502px] bg-white dark:bg-[#191B27] overflow-hidden rounded-t-[20px]">
-          {/* Scooter Image - Positioned absolutely at top 299px */}
+          {/* Scooter Image */}
           <div className="absolute left-0 top-[299px] w-full h-[217px] pointer-events-none">
             <Image
               src="/modalImage.png"
@@ -106,8 +105,7 @@ export default function BookNowModal({
             className={cn(
               "absolute top-4 right-4 w-6 h-6 rounded-full z-20",
               "text-[#99A1AF] hover:text-gray-600 dark:hover:text-gray-300",
-              "transition-colors focus:outline-none focus:ring-0 focus:ring-offset-0",
-              "disabled:pointer-events-none"
+              "transition-colors focus:outline-none"
             )}
           >
             <X className="w-full h-full" />
@@ -115,7 +113,7 @@ export default function BookNowModal({
           </DrawerClose>
 
           {/* Header Content */}
-          <div className="absolute left-4 top-6 flex flex-col gap-3 z-10">
+          <div className="absolute left-4 top-6 flex flex-col gap-3 z-10 w-[358px]">
             <DrawerTitle asChild>
               <h2 className="text-2xl font-medium text-[#111111] dark:text-white leading-[30px]">
                 Start your ride
@@ -128,7 +126,7 @@ export default function BookNowModal({
 
           {/* Form Content */}
           <div className="absolute left-4 top-[121px] w-[358px] flex flex-col items-center gap-6 z-10">
-            {/* Input Field */}
+            {/* Input Field Container */}
             <div className="w-full flex flex-col gap-3">
               <label
                 htmlFor="phone-number"
@@ -136,38 +134,68 @@ export default function BookNowModal({
               >
                 Number
               </label>
-              <div className="w-full h-[54px] px-3 py-1 bg-white dark:bg-[#0B0A1B] rounded-lg border border-[#E5E5E5] dark:border-gray-700 shadow-sm flex items-center">
+
+              {/* Modded Bar-Bar-Bar UI Input */}
+              <div
+                className={cn(
+                  "w-full h-[54px] bg-[#F5F5F5] dark:bg-[#20222F] rounded-xl flex items-center overflow-hidden border transition-all",
+                  error ? "border-red-500" : "border-transparent focus-within:border-[#F4AA05]"
+                )}
+              >
+                {/* Flag and Code Section */}
+                <div className="flex items-center gap-2 px-4 border-r border-gray-300 dark:border-gray-700 h-full bg-gray-50 dark:bg-[#252836]">
+                  {/* Indian Flag SVG */}
+                  <svg width="20" height="15" viewBox="0 0 20 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0 rounded-[2px] shadow-sm">
+                    <rect width="20" height="15" fill="white" />
+                    <rect width="20" height="5" fill="#FF9933" />
+                    <rect y="10" width="20" height="5" fill="#138808" />
+                    <circle cx="10" cy="7.5" r="2" fill="none" stroke="#000080" strokeWidth="0.5" />
+                    <circle cx="10" cy="7.5" r="0.4" fill="#000080" />
+                    <path d="M10 7.5 L10 5.5 M10 7.5 L12 7.5 M10 7.5 L10 9.5 M10 7.5 L8 7.5 M10 7.5 L11.4 6.1 M10 7.5 L11.4 8.9 M10 7.5 L8.6 8.9 M10 7.5 L8.6 6.1" stroke="#000080" strokeWidth="0.2" />
+                  </svg>
+                  <span className="text-base font-semibold text-gray-700 dark:text-gray-200">+91</span>
+                </div>
+
+                {/* Input Area */}
                 <input
                   id="phone-number"
                   type="tel"
                   inputMode="numeric"
                   value={phoneNumber}
                   onChange={handlePhoneChange}
-                  placeholder="Enter number"
+                  placeholder="xxxxx xxxxx"
                   className={cn(
-                    "flex-1 bg-transparent outline-none",
-                    "text-base text-gray-900 dark:text-white leading-6",
-                    "placeholder:text-[#737373] dark:placeholder:text-gray-500"
+                    "flex-1 bg-transparent outline-none px-4",
+                    "text-lg font-mono font-medium tracking-wider", // Use mono font for bar-bar-bar feel
+                    "text-gray-900 dark:text-white",
+                    "placeholder:text-gray-400 dark:placeholder:text-gray-600"
                   )}
-                  maxLength={15}
+                  maxLength={10}
                 />
               </div>
+
+              {/* Validation Error */}
+              {error && (
+                <p className="text-xs text-red-500 animate-in slide-in-from-top-1 px-1">
+                  {error}
+                </p>
+              )}
             </div>
 
             {/* Submit Button */}
             <button
               onClick={handleSubmit}
-              disabled={phoneNumber.trim().length < 10}
+              disabled={phoneNumber.length < 10}
               className={cn(
-                "w-[140px] h-11 px-[45px] py-[18px] bg-[#F7B638] hover:bg-[#e5a525]",
-                "rounded-full shadow-md",
-                "flex flex-col justify-center items-center",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-                "transition-all"
+                "w-full h-14 bg-[#F7B638] hover:bg-[#e5a525]",
+                "rounded-full shadow-lg shadow-orange-500/20",
+                "flex flex-col justify-center items-center mt-4",
+                "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none",
+                "transition-all active:scale-[0.98]"
               )}
             >
-              <span className="text-sm font-semibold text-white leading-[17.5px]">
-                Button
+              <span className="text-xl font-light text-white tracking-wide">
+                Verify OTP
               </span>
             </button>
           </div>

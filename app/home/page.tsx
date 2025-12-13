@@ -333,7 +333,7 @@ function HomePageContentInner() {
         <div className="min-h-screen w-full bg-white dark:bg-[#0B0A1B] text-black dark:text-white pb-24">
 
             {/* Top Banner */}
-            <div className="w-full rounded-b-3xl p-6 pt-10 relative overflow-hidden">
+            <div className="w-full rounded-b-3xl relative overflow-hidden h-40">
                 {/* Light Mode Background */}
                 <div
                     className="absolute inset-0 bg-cover bg-center bg-no-repeat dark:hidden rounded-b-3xl"
@@ -345,15 +345,11 @@ function HomePageContentInner() {
                     className="absolute inset-0 bg-cover bg-center bg-no-repeat hidden dark:block rounded-b-3xl"
                     style={{ backgroundImage: 'url(/darkNav.jpg)' }}
                 />
+            </div>
 
-                {/* Content Overlay */}
-                {/* <div className="relative z-10">
-                    <h1 className="text-3xl font-semibold">Available Vehicles</h1>
-                    <p className="text-gray-800 dark:text-white text-sm mt-1">Find your best ride here</p>
-                </div> */}
-
-                {/* Horizontal Search Row - Separate Containers */}
-                <div className="flex items-center gap-3 mt-22 relative z-10">
+            {/* Horizontal Search Row - Overlapping */}
+            <div className="px-6 -mt-7 relative z-20 mb-2">
+                <div className="flex items-center gap-3">
                     {/* Location and Date/Time Container */}
                     <div className="flex-1 flex items-center gap-0 bg-white rounded-full shadow-md overflow-hidden">
                         {/* Location Picker */}
