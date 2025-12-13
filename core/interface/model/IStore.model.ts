@@ -8,6 +8,10 @@ export interface IStore extends Document {
 
   address: string;
   district: string;
+
+  latitude?: number;
+  longitude?: number;
+
   location: {
     coordinates: {
       type: "Point";

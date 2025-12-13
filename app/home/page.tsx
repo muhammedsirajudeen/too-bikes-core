@@ -29,6 +29,8 @@ import axiosInstance from "@/lib/axios";
 import { AxiosError } from "axios";
 import { Pagination, VehicleResponse } from "../api/v1/available-vehicles/route";
 import { IVehicle } from "@/core/interface/model/IVehicle.model";
+import { IStore } from "@/core/interface/model/IStore.model";
+import { StoreSelector } from "@/components/StoreSelector";
 
 function HomePageContentInner() {
     const [open, setOpen] = useState(false);
@@ -42,11 +44,13 @@ function HomePageContentInner() {
     // State from URL params
     const [startTime, setStartTime] = useState<string>("");
     const [endTime, setEndTime] = useState<string>("");
-    const [latitude, setLatitude] = useState<string>("");
-    const [longitude, setLongitude] = useState<string>("");
-    const [radiusKm, setRadiusKm] = useState<string>("100");
     const [currentPage, setCurrentPage] = useState<number>(1);
     const limit = 10;
+
+    // Store state
+    const [allStores, setAllStores] = useState<IStore[]>([]);
+    const [selectedStore, setSelectedStore] = useState<IStore | null>(null);
+    const [storesLoading, setStoresLoading] = useState<boolean>(true);
 
     // Filter state (for editing)
     const [pickupDate, setPickupDate] = useState<Date | null>(null);
@@ -60,23 +64,34 @@ function HomePageContentInner() {
     const [pagination, setPagination] = useState<Pagination | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>("");
-    const [district, setDistrict] = useState<string>("");
 
-    // Initialize from URL params
+    // Fetch all stores on mount
+    useEffect(() => {
+        const fetchStores = async () => {
+            try {
+                const response = await axiosInstance.get<{ success: boolean; data: IStore[] }>('/api/v1/stores');
+                if (response.data.success) {
+                    setAllStores(response.data.data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch stores:", err);
+            } finally {
+                setStoresLoading(false);
+            }
+        };
+        fetchStores();
+    }, []);
+
+    // Initialize from URL params and find nearest store
     useEffect(() => {
         const startTimeParam = searchParams.get("startTime");
         const endTimeParam = searchParams.get("endTime");
-        const latParam = searchParams.get("latitude");
-        const lngParam = searchParams.get("longitude");
-        const radiusParam = searchParams.get("radiusKm");
+        const storeIdParam = searchParams.get("storeId");
         const pageParam = searchParams.get("page");
 
-        if (startTimeParam && endTimeParam && latParam && lngParam) {
+        if (startTimeParam && endTimeParam) {
             setStartTime(startTimeParam);
             setEndTime(endTimeParam);
-            setLatitude(latParam);
-            setLongitude(lngParam);
-            setRadiusKm(radiusParam || "50");
             setCurrentPage(parseInt(pageParam || "1"));
 
             // Parse dates for filter display
@@ -86,15 +101,65 @@ function HomePageContentInner() {
             setDropoffDate(end);
             setPickupTime(format(start, "HH:mm"));
             setDropoffTime(format(end, "HH:mm"));
+
+            // If storeId is in URL, find and set that store
+            if (storeIdParam && allStores.length > 0) {
+                const store = allStores.find(s => s._id.toString() === storeIdParam);
+                if (store) {
+                    setSelectedStore(store);
+                }
+            } else if (!selectedStore && allStores.length > 0) {
+                // Auto-select nearest store based on user location
+                findNearestStore();
+            }
         } else {
             setError("Missing required parameters. Please start from the landing page.");
             setLoading(false);
         }
-    }, [searchParams]);
+    }, [searchParams, allStores]);
+
+    // Find nearest store based on user's geolocation
+    const findNearestStore = async () => {
+        if (!navigator.geolocation) {
+            // Fallback to first store if geolocation not available
+            if (allStores.length > 0) {
+                setSelectedStore(allStores[0]);
+            }
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    const response = await axiosInstance.get<{ success: boolean; data: IStore }>(
+                        `/api/v1/stores?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}`
+                    );
+                    if (response.data.success && response.data.data) {
+                        setSelectedStore(response.data.data);
+                    } else if (allStores.length > 0) {
+                        setSelectedStore(allStores[0]);
+                    }
+                } catch (err) {
+                    console.error("Failed to find nearest store:", err);
+                    // Fallback to first store
+                    if (allStores.length > 0) {
+                        setSelectedStore(allStores[0]);
+                    }
+                }
+            },
+            (error) => {
+                console.error("Geolocation error:", error);
+                // Fallback to first store
+                if (allStores.length > 0) {
+                    setSelectedStore(allStores[0]);
+                }
+            }
+        );
+    };
 
     // Fetch vehicles using axios with proper error handling
     const fetchVehicles = useCallback(async () => {
-        if (!startTime || !endTime || !latitude || !longitude) {
+        if (!startTime || !endTime || !selectedStore) {
             return;
         }
 
@@ -105,9 +170,7 @@ function HomePageContentInner() {
             const params = {
                 startTime,
                 endTime,
-                latitude,
-                longitude,
-                radiusKm,
+                storeId: selectedStore._id.toString(),
                 page: currentPage.toString(),
                 limit: limit.toString(),
             };
@@ -143,7 +206,6 @@ function HomePageContentInner() {
             }
 
             setVehicles(data.data);
-            setDistrict(data.metadata.district);
             setPagination(data.metadata?.pagination || null);
             setError(""); // Clear any previous errors
         } catch (err) {
@@ -195,7 +257,7 @@ function HomePageContentInner() {
         } finally {
             setLoading(false);
         }
-    }, [startTime, endTime, latitude, longitude, radiusKm, currentPage]);
+    }, [startTime, endTime, selectedStore, currentPage]);
 
     useEffect(() => {
         fetchVehicles();
@@ -225,52 +287,33 @@ function HomePageContentInner() {
         setCurrentPage(1); // Reset to first page when filters change
 
         // Update URL for bookmarking/sharing (without triggering navigation)
-        const params = new URLSearchParams({
-            startTime: pickupDateTime.toISOString(),
-            endTime: dropoffDateTime.toISOString(),
-            latitude,
-            longitude,
-            radiusKm,
-            page: "1",
-            limit: limit.toString(),
-        });
-        window.history.replaceState({}, '', `/api?${params.toString()}`);
+        if (selectedStore) {
+            const params = new URLSearchParams({
+                startTime: pickupDateTime.toISOString(),
+                endTime: dropoffDateTime.toISOString(),
+                storeId: selectedStore._id.toString(),
+                page: "1",
+                limit: limit.toString(),
+            });
+            window.history.replaceState({}, '', `/home?${params.toString()}`);
+        }
 
         setShowFilters(false);
     };
 
-    const updateLocation = async () => {
-        if (!navigator.geolocation) {
-            setError("Geolocation is not supported by your browser");
-            return;
-        }
+    const handleStoreSelect = (store: IStore) => {
+        setSelectedStore(store);
+        setCurrentPage(1); // Reset to first page when store changes
 
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const lat = position.coords.latitude.toString();
-                const lng = position.coords.longitude.toString();
-
-                // Update state directly - this will trigger fetchVehicles automatically
-                setLatitude(lat);
-                setLongitude(lng);
-                setCurrentPage(1); // Reset to first page when location changes
-
-                // Update URL for bookmarking/sharing (without triggering navigation)
-                const params = new URLSearchParams({
-                    startTime,
-                    endTime,
-                    latitude: lat,
-                    longitude: lng,
-                    radiusKm,
-                    page: "1",
-                    limit: limit.toString(),
-                });
-                window.history.replaceState({}, '', `/home?${params.toString()}`);
-            },
-            (error) => {
-                setError(`Unable to get your location: ${error.message}`);
-            }
-        );
+        // Update URL for bookmarking/sharing
+        const params = new URLSearchParams({
+            startTime,
+            endTime,
+            storeId: store._id.toString(),
+            page: "1",
+            limit: limit.toString(),
+        });
+        window.history.replaceState({}, '', `/home?${params.toString()}`);
     };
 
     const changePage = (newPage: number) => {
@@ -278,16 +321,16 @@ function HomePageContentInner() {
         setCurrentPage(newPage);
 
         // Update URL for bookmarking/sharing (without triggering navigation)
-        const params = new URLSearchParams({
-            startTime,
-            endTime,
-            latitude,
-            longitude,
-            radiusKm,
-            page: newPage.toString(),
-            limit: limit.toString(),
-        });
-        window.history.replaceState({}, '', `/home?${params.toString()}`);
+        if (selectedStore) {
+            const params = new URLSearchParams({
+                startTime,
+                endTime,
+                storeId: selectedStore._id.toString(),
+                page: newPage.toString(),
+                limit: limit.toString(),
+            });
+            window.history.replaceState({}, '', `/home?${params.toString()}`);
+        }
     };
 
 
@@ -319,9 +362,9 @@ function HomePageContentInner() {
             }
         }
 
-        if (latitude && longitude) {
-            params.set("pickupLocation", `${latitude}, ${longitude}`);
-            params.set("dropLocation", `${latitude}, ${longitude}`);
+        if (selectedStore) {
+            params.set("pickupLocation", `${selectedStore.address}, ${selectedStore.district}`);
+            params.set("dropLocation", `${selectedStore.address}, ${selectedStore.district}`);
         }
 
         // Navigate to vehicle detail page
@@ -352,17 +395,15 @@ function HomePageContentInner() {
                 <div className="flex items-center gap-3">
                     {/* Location and Date/Time Container */}
                     <div className="flex-1 flex items-center gap-0 bg-white rounded-full shadow-md overflow-hidden">
-                        {/* Location Picker */}
-                        <button
-                            onClick={updateLocation}
-                            className="flex-1 py-3 px-4 flex items-center gap-2 border-r border-gray-200 min-w-0"
-                        >
-                            <MapPin size={18} className="text-gray-400 shrink-0" />
-                            <span className="text-gray-700 text-sm font-medium truncate">
-                                {/* {latitude && longitude ? `${parseFloat(latitude).toFixed(2)}, ${parseFloat(longitude).toFixed(2)}` : "Location"} */}
-                                {district ? district : "Location"}
-                            </span>
-                        </button>
+                        {/* Store Selector */}
+                        <div className="flex-1 border-r border-gray-200">
+                            <StoreSelector
+                                stores={allStores}
+                                selectedStore={selectedStore}
+                                onStoreSelect={handleStoreSelect}
+                                loading={storesLoading}
+                            />
+                        </div>
 
                         {/* Date/Time Picker */}
                         <button

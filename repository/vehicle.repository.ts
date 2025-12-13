@@ -14,7 +14,8 @@ export class VehicleRepository extends BaseRepository<IVehicle> {
     page = 1,
     limit = 10,
     district: string,
-  ): Promise<{ vehicles: IVehicle[]; total: number,district:string }> {
+    store?: any
+  ): Promise<{ vehicles: IVehicle[]; total: number; district: string; store?: any }> {
     const pipeline = [
       {
         $match: {
@@ -54,7 +55,8 @@ export class VehicleRepository extends BaseRepository<IVehicle> {
     return {
       vehicles: result.vehicles,
       total: result.total[0]?.count || 0,
-      district
+      district,
+      store
     };
   }
 

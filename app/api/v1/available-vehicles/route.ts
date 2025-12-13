@@ -11,6 +11,7 @@ export interface VehicleResponse {
   data: IVehicle[];
   metadata: {
     district: string;
+    store?: any;
     pagination: Pagination;
   };
   error?: Array<{ message?: string; path?: string[] }>;
@@ -36,12 +37,10 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
     return NextResponse.json({
       success: false,
       error: validated.error.issues
-    },{status: HttpStatus.BAD_REQUEST});
+    }, { status: HttpStatus.BAD_REQUEST });
   }
-  const { vehicles, total, district } = await availableVehiclesService.findAvailableVehicles(
-    validated.data.latitude,
-    validated.data.longitude,
-    validated.data.radiusKm,
+  const { vehicles, total, district, store } = await availableVehiclesService.findAvailableVehicles(
+    validated.data.storeId,
     validated.data.startTime,
     validated.data.endTime,
     validated.data.page,
@@ -53,8 +52,9 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
     message: "Available vehicles retrieved successfully",
     data: vehicles,
     metadata: {
-      district:district,
-      pagination:{
+      district: district,
+      store: store,
+      pagination: {
         page: validated.data.page,
         limit: validated.data.limit,
         total,
@@ -63,5 +63,6 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
         hasPrev: validated.data.page > 1,
       }
     },
-  },{ status: HttpStatus.OK });
+  }, { status: HttpStatus.OK });
 });
+

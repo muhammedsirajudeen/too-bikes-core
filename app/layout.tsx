@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "./provider/theme.provider";
+import { ThemeToggle } from "./components/ThemeToggle";
 
 import { Poppins } from "next/font/google";
 import RouterLoadingProvider from "./provider/router.provider";
@@ -27,11 +28,12 @@ export default function RootLayout({
         className={`${poppins.variable} font-poppins antialiased`}
         suppressHydrationWarning
       >
-          <ThemeProvider>
-            <RouterLoadingProvider>
+        <ThemeProvider>
+          <RouterLoadingProvider>
+            <ThemeToggle />
             {children}
-            </RouterLoadingProvider>
-          </ThemeProvider>
+          </RouterLoadingProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

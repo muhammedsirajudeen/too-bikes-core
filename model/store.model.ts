@@ -8,6 +8,10 @@ const storeSchema = new Schema<IStore>(
 
     address: { type: String, required: true },
     district: { type: String, required: true },
+
+    latitude: { type: Number },
+    longitude: { type: Number },
+
     location: {
       coordinates: {
         type: {

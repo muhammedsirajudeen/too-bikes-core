@@ -4,14 +4,15 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import PickupSelector from "./pickup";
 import { useTheme } from "next-themes";
-import { Moon, Sun } from "lucide-react";
+import PickupSelector from "./pickup";
+
 import { useRouter } from "next/navigation";
 import ROUTE_CONSTANTS from "@/constants/routeConstants";
 
+
 export default function LandingPage() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
@@ -157,6 +158,7 @@ export default function LandingPage() {
     router.push(`${ROUTE_CONSTANTS.HOME}?${params.toString()}`);
   };
 
+
   // Use resolvedTheme for consistent server/client rendering
   const currentTheme = mounted ? resolvedTheme : "light";
   const isLight = currentTheme === "light";
@@ -176,20 +178,7 @@ export default function LandingPage() {
         />
       </div>
 
-      {/* FIXED THEME TOGGLE */}
-      <Button
-        onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-        className="fixed top-4 right-4 z-30 p-2 rounded-full 
-          bg-black/70 text-white dark:bg-white/80 dark:text-black 
-          backdrop-blur shadow"
-        suppressHydrationWarning
-      >
-        {mounted ? (
-          isLight ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />
-        ) : (
-          <Moon className="h-5 w-5" />
-        )}
-      </Button>
+
 
       {/* SCROLL CONTENT BELOW THE HEADER IMAGE */}
       <div className="relative z-10 pt-[clamp(310px,42vh,490px)] flex flex-col items-center pb-0">

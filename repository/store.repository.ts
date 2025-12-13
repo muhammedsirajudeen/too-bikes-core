@@ -8,12 +8,12 @@ export class StoreRepository extends BaseRepository<IStore> {
   }
 
   async findStoresNear(
-    longitude: number, 
-    latitude: number, 
+    longitude: number,
+    latitude: number,
     radiusKm: number
   ): Promise<IStore[]> {
     // India bounds validation (Northern hemisphere)
-    const isValidIndiaCoords = 
+    const isValidIndiaCoords =
       latitude >= 8.0 && latitude <= 37.0 &&
       longitude >= 68.0 && longitude <= 97.5;
 
@@ -37,5 +37,46 @@ export class StoreRepository extends BaseRepository<IStore> {
       }
       throw error;
     }
+  }
+
+  /**
+   * Find the nearest store to given coordinates
+   */
+  async findNearestStore(
+    longitude: number,
+    latitude: number
+  ): Promise<IStore | null> {
+    // India bounds validation (Northern hemisphere)
+    const isValidIndiaCoords =
+      latitude >= 8.0 && latitude <= 37.0 &&
+      longitude >= 68.0 && longitude <= 97.5;
+
+    if (!isValidIndiaCoords) {
+      throw new Error('Coordinates must be within India bounds (latitude: 8.0-37.0, longitude: 68.0-97.5)');
+    }
+
+    try {
+      const stores = await this.model.find({
+        "location.coordinates": {
+          $nearSphere: {
+            $geometry: { type: "Point", coordinates: [longitude, latitude] },
+          }
+        }
+      }).limit(1);
+
+      return stores.length > 0 ? stores[0] : null;
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('2dsphere')) {
+        throw new Error('Geospatial index not found. Please ensure the store location index is created.');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Get all active stores
+   */
+  async findAllStores(): Promise<IStore[]> {
+    return await this.model.find({}).sort({ name: 1 });
   }
 }

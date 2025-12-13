@@ -6,26 +6,33 @@ export class AvailableVehiclesService {
   constructor(
     private readonly storeRepo = new StoreRepository(),
     private readonly vehicleRepo = new VehicleRepository()
-  ) {}
+  ) { }
 
   async findAvailableVehicles(
-    latitude: number,
-    longitude: number,
-    radiusKm: number,
+    storeId: string,
     startTime: Date,  // ISO8601 parsed
     endTime: Date,    // ISO8601 parsed
     page: number,
     limit: number
   ) {
     try {
-      const nearbyStores = await this.storeRepo.findStoresNear(longitude, latitude, radiusKm);
-      
-      if (nearbyStores.length === 0) return { vehicles: [], total: 0, district: "" };
+      // Verify store exists
+      const store = await this.storeRepo.findById(toObjectId(storeId));
 
-      const storeIds = nearbyStores.map(s => s._id);
-      const district = nearbyStores[0]?.district;
-      
-      return this.vehicleRepo.findAvailableVehiclesByStores(storeIds, startTime, endTime, page, limit,district);
+      if (!store) {
+        throw new Error("Store not found");
+      }
+
+      // Get vehicles from this specific store
+      return this.vehicleRepo.findAvailableVehiclesByStores(
+        [toObjectId(storeId)],
+        startTime,
+        endTime,
+        page,
+        limit,
+        store.district,
+        store
+      );
     } catch (error) {
       // Re-throw with more context
       throw new Error(`Failed to find available vehicles: ${error instanceof Error ? error.message : String(error)}`);
