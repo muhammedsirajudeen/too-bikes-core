@@ -5,7 +5,6 @@ import { Fuel, Zap, Droplets } from "lucide-react";
 interface VehicleInfoCardProps {
   brand: string;
   model: string;
-  price: number;
   pricePerDay?: number;
   freeKilometers?: number;
   fuelType: "petrol" | "diesel" | "electric";
@@ -14,7 +13,6 @@ interface VehicleInfoCardProps {
 export default function VehicleInfoCard({
   brand,
   model,
-  price,
   pricePerDay,
   freeKilometers = 480,
   fuelType,

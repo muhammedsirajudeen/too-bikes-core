@@ -109,8 +109,6 @@ export default function VehicleImageSlider({
   // Auto-scroll to current index on mount
   useEffect(() => {
     if (scrollContainerRef.current && images.length > 0) {
-
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentIndex(0);
       scrollContainerRef.current.scrollTo({ left: 0, behavior: "auto" });
     }
@@ -197,8 +195,8 @@ export default function VehicleImageSlider({
         >
           <Heart
             className={`w-5 h-5 ${isFavorite
-                ? "fill-red-500 text-red-500"
-                : "text-gray-700 dark:text-gray-300"
+              ? "fill-red-500 text-red-500"
+              : "text-gray-700 dark:text-gray-300"
               }`}
           />
         </button>
@@ -212,8 +210,8 @@ export default function VehicleImageSlider({
               key={index}
               onClick={() => goToSlide(index)}
               className={`w-2 h-2 rounded-full transition-all ${index === currentIndex
-                  ? "bg-gray-900 dark:bg-gray-100"
-                  : "bg-gray-400 dark:bg-gray-500"
+                ? "bg-gray-900 dark:bg-gray-100"
+                : "bg-gray-400 dark:bg-gray-500"
                 }`}
               aria-label={`Go to slide ${index + 1}`}
             />

@@ -39,8 +39,6 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
   const pickupTimeParam = searchParams.get("pickupTime");
   const dropDateParam = searchParams.get("dropDate");
   const dropTimeParam = searchParams.get("dropTime");
-  const pickupLocationParam = searchParams.get("pickupLocation");
-  const dropLocationParam = searchParams.get("dropLocation");
 
   // Fetch vehicle details from API
   const fetchVehicleDetails = useCallback(async () => {
@@ -226,7 +224,6 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
 
   // const totalRent = vehicle.pricePerHour;
   const ms = dropDate.getTime() - pickupDate.getTime();
-  const hours = ms / (1000 * 60 * 60);
   const days = ms / (1000 * 60 * 60 * 24);
 
   // Always charge daily rate
@@ -249,7 +246,6 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
       <VehicleInfoCard
         brand={vehicle.brand}
         model={vehicle.name}
-        price={vehicle.pricePerHour}
         pricePerDay={vehicle.pricePerDay}
         freeKilometers={480}
         fuelType={vehicle.fuelType}

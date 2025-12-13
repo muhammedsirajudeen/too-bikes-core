@@ -1,5 +1,6 @@
 import { HttpStatus } from "@/constants/status.constant";
 import { IVehicle } from "@/core/interface/model/IVehicle.model";
+import { IStore } from "@/core/interface/model/IStore.model";
 import { querySchema } from "@/lib/schemas/availableVehicles.schema";
 import { AvailableVehiclesService } from "@/services/client/available-vehicles.service";
 import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
@@ -11,7 +12,7 @@ export interface VehicleResponse {
   data: IVehicle[];
   metadata: {
     district: string;
-    store?: any;
+    store?: IStore | null;
     pagination: Pagination;
   };
   error?: Array<{ message?: string; path?: string[] }>;

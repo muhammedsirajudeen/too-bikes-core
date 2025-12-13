@@ -21,7 +21,6 @@ export default function OTPModal({
     isOpen,
     onClose,
     onSubmit,
-    phoneNumber,
 }: OTPModalProps) {
     const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
     const [error, setError] = useState<string>("");
@@ -48,6 +47,7 @@ export default function OTPModal({
     // Reset on open
     useEffect(() => {
         if (isOpen) {
+
             setOtp(["", "", "", "", "", ""]);
             setError("");
             setTimeLeft(59);
