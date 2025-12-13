@@ -1,10 +1,11 @@
 // This file is server-only - winston is a Node.js library
 import { env } from '@/config/env.config';
+import { Logger } from 'winston';
 
 // Use dynamic import to avoid client-side bundling
-let winstonLogger: any = null;
+let winstonLogger: Logger | Console | null = null;
 
-const createWinstonLogger = () => {
+const createWinstonLogger = (): Logger | Console => {
   if (typeof window !== 'undefined') {
     // Client-side fallback
     return console;
@@ -13,10 +14,17 @@ const createWinstonLogger = () => {
   try {
     const winston = require('winston');
     const DailyRotateFile = require('winston-daily-rotate-file');
-    const { combine, timestamp, printf, colorize, errors } = winston.format;
+    const { combine, timestamp, colorize, errors, format: winstonFormat } = winston;
 
-    const logFormat = printf(({ level, message, timestamp, stack }: any) => {
-      return `${timestamp} [${level}]: ${stack || message}`;
+    // Custom log format using winston's TransformableInfo
+    const logFormat = winstonFormat.printf((info: unknown) => {
+      const { level, message, timestamp: ts, stack } = info as {
+        level: string;
+        message: string;
+        timestamp?: string;
+        stack?: string;
+      };
+      return `${ts || new Date().toISOString()} [${level}]: ${stack || message}`;
     });
 
     return winston.createLogger({
@@ -45,8 +53,10 @@ const createWinstonLogger = () => {
   }
 };
 
+// Initialize logger immediately
 if (!winstonLogger) {
   winstonLogger = createWinstonLogger();
 }
 
-export default winstonLogger;
+// Export with non-null assertion since we always initialize it
+export default winstonLogger as Logger | Console;

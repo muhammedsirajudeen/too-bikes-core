@@ -1,4 +1,5 @@
 import { IVehicle } from "../core/interface/model/IVehicle.model";
+import { IStore } from "../core/interface/model/IStore.model";
 import { BaseRepository } from "./base.respository";
 import { VehicleModel } from "@/model/vehicles.model";
 import { Types } from "mongoose";
@@ -14,8 +15,8 @@ export class VehicleRepository extends BaseRepository<IVehicle> {
     page = 1,
     limit = 10,
     district: string,
-    store?: any
-  ): Promise<{ vehicles: IVehicle[]; total: number; district: string; store?: any }> {
+    store?: IStore | null
+  ): Promise<{ vehicles: IVehicle[]; total: number; district: string; store?: IStore | null }> {
     const pipeline = [
       {
         $match: {

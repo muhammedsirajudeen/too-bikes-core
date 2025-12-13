@@ -9,6 +9,7 @@ import PickupSelector from "./pickup";
 
 import { useRouter } from "next/navigation";
 import ROUTE_CONSTANTS from "@/constants/routeConstants";
+import { IStore } from "@/core/interface/model/IStore.model";
 
 
 export default function LandingPage() {
@@ -39,8 +40,8 @@ export default function LandingPage() {
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
 
   // Store state
-  const [stores, setStores] = useState<any[]>([]);
-  const [selectedStore, setSelectedStore] = useState<any | null>(null);
+  const [stores, setStores] = useState<IStore[]>([]);
+  const [selectedStore, setSelectedStore] = useState<IStore | null>(null);
   const [storesLoading, setStoresLoading] = useState(true);
 
   useEffect(() => {
