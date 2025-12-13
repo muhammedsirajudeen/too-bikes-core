@@ -206,6 +206,7 @@ export default function AuthModal({
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ phoneNumber, otp: otpString }),
+                credentials: "include", // Important: include cookies in request
             });
 
             const data = await response.json();
@@ -214,6 +215,12 @@ export default function AuthModal({
                 setOtpError(data.message || "Invalid OTP");
                 return;
             }
+
+            // Store access token from response body in localStorage
+            if (data.token) {
+                localStorage.setItem("auth_token", data.token);
+            }
+            // Refresh token is automatically stored in HTTP-only cookie by server
 
             // Show success message
             setOtpSuccess("OTP verified successfully!");

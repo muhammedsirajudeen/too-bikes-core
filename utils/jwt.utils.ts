@@ -5,18 +5,18 @@ import { env } from '@/config/env.config';
 const ACCESS_KEY = env.JWT_ACCESS_SECRET as string;
 const REFRESH_KEY = env.JWT_REFRESH_SECRET as string;
 
-const ACCESS_TOKEN_EXPIRY = "15m";
-const REFRESH_TOKEN_EXPIRY = "7d";
+const ACCESS_TOKEN_EXPIRY = "5m";
+const REFRESH_TOKEN_EXPIRY = "8d";
 
 export function generateAccessToken(payload: object): string {
-  return jwt.sign(payload, ACCESS_KEY, { 
+  return jwt.sign(payload, ACCESS_KEY, {
     expiresIn: ACCESS_TOKEN_EXPIRY,
     algorithm: 'HS256'
   });
 }
 
 export function generateRefreshToken(payload: object): string {
-  return jwt.sign(payload, REFRESH_KEY, { 
+  return jwt.sign(payload, REFRESH_KEY, {
     expiresIn: REFRESH_TOKEN_EXPIRY,
     algorithm: 'HS256'
   });
@@ -42,7 +42,7 @@ export function verifyRefreshToken(token: string) {
   }
 }
 
-export function decodeAndVerifyToken(token: string): Record<string, {_id:string}> | null {
+export function decodeAndVerifyToken(token: string): Record<string, { _id: string }> | null {
   try {
     const decoded = jwt.verify(token, ACCESS_KEY, { algorithms: ['HS256'] });
     return typeof decoded === 'object' && decoded !== null ? decoded : null;
