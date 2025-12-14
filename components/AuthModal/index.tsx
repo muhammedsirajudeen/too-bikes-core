@@ -5,6 +5,7 @@ import axios from "axios";
 
 import { useEffect, useState, useRef } from "react";
 import { X, ArrowLeft } from "lucide-react";
+import Image from "next/image";
 import {
     Drawer,
     DrawerClose,
@@ -543,6 +544,19 @@ export default function AuthModal({
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Bottom Image - Full Width at Absolute Bottom */}
+                <div className="w-full relative">
+                    <Image
+                        src="/modalImage.png"
+                        alt="Auth modal decoration"
+                        height={400}
+                        width={1920}
+                        className="w-full h-auto"
+                        // fill
+                        priority
+                    />
                 </div>
             </DrawerContent>
         </Drawer>
