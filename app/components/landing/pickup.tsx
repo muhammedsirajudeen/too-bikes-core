@@ -15,9 +15,10 @@ interface PickupSelectorProps {
   onTimeChange: (time: string | null) => void;
   error?: string;
   minDate?: Date | null; // Minimum date that can be selected (for dropoff validation)
+  onOpen?: () => void; // Callback when popover opens (for scroll handling)
 }
 
-export default function PickupSelector({ pickup, date, time, onDateChange, onTimeChange, error, minDate }: PickupSelectorProps) {
+export default function PickupSelector({ pickup, date, time, onDateChange, onTimeChange, error, minDate, onOpen }: PickupSelectorProps) {
   // control both popovers
   const [openDate, setOpenDate] = useState(false);
   const [openTime, setOpenTime] = useState(false);
@@ -87,7 +88,7 @@ export default function PickupSelector({ pickup, date, time, onDateChange, onTim
         )}
       >
         {/* DATE PICKER */}
-        <Popover open={openDate} onOpenChange={setOpenDate}>
+        <Popover open={openDate} onOpenChange={(open) => { setOpenDate(open); if (open && onOpen) onOpen(); }}>
           <PopoverTrigger className="flex items-center gap-3 cursor-pointer">
             <CalendarIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
 
@@ -118,7 +119,7 @@ export default function PickupSelector({ pickup, date, time, onDateChange, onTim
         <div className="w-px h-8 bg-gray-300 dark:bg-gray-600" />
 
         {/* TIME PICKER */}
-        <Popover open={openTime} onOpenChange={setOpenTime}>
+        <Popover open={openTime} onOpenChange={(open) => { setOpenTime(open); if (open && onOpen) onOpen(); }}>
           <PopoverTrigger className="flex items-center gap-3 cursor-pointer">
             <Clock className="w-5 h-5 text-gray-600 dark:text-gray-300" />
 
