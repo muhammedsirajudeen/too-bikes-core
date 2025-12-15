@@ -13,6 +13,7 @@ export default function Navbar() {
       shadow-[0_-4px_12px_rgba(0,0,0,0.15)]
       rounded-tl-2xl rounded-tr-2xl
       py-2 flex justify-around
+      md:hidden
     ">
       <div className="flex flex-col items-center text-[#FF6B00]">
         <Home className="w-6 h-6" />

@@ -33,7 +33,7 @@ export function ThemeToggle() {
             onClick={() => setTheme(isLight ? "dark" : "light")}
             className="fixed top-4 right-4 z-30 p-2 rounded-full 
         bg-black/70 text-white dark:bg-white/80 dark:text-black 
-        backdrop-blur shadow"
+        backdrop-blur shadow md:hidden"
             suppressHydrationWarning
         >
             {isLight ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}

@@ -17,10 +17,18 @@ import {
     DrawerTitle,
 } from "@/components/ui/drawer";
 
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Navbar from "./(components)/navbar";
-import { useState, useEffect, useCallback, Suspense } from "react";
+import Topbar from "./(components)/topbar";
+import { useState, useEffect, useCallback, Suspense, useMemo } from "react";
 import ComingSoonDrawer from "./(components)/drawer";
 import { useSearchParams, useRouter } from "next/navigation";
 import PickupSelector from "@/app/components/landing/pickup";
@@ -31,6 +39,8 @@ import { Pagination, VehicleResponse } from "../api/v1/available-vehicles/route"
 import { IVehicle } from "@/core/interface/model/IVehicle.model";
 import { IStore } from "@/core/interface/model/IStore.model";
 import { StoreSelector } from "@/components/StoreSelector";
+import FilterSidebar from "./(components)/FilterSidebar";
+import DesktopFilterBar from "./(components)/DesktopFilterBar";
 
 function HomePageContentInner() {
     const [open, setOpen] = useState(false);
@@ -58,6 +68,30 @@ function HomePageContentInner() {
     const [dropoffDate, setDropoffDate] = useState<Date | null>(null);
     const [dropoffTime, setDropoffTime] = useState<string | null>(null);
     const [showFilters, setShowFilters] = useState(false);
+
+    // Screen size detection for responsive modal/drawer
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+
+        // Check on mount
+        checkMobile();
+
+        // Add listener for resize
+        window.addEventListener('resize', checkMobile);
+
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    // Filter state for sidebar
+    const [sortBy, setSortBy] = useState<string>("popular");
+    const [priceRange, setPriceRange] = useState<[number, number]>([250, 1800]);
+    const [bikeTypes, setBikeTypes] = useState<string[]>([]);
+    const [fuelType, setFuelType] = useState<string>("Both");
+    const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
 
     // Data state
     const [vehicles, setVehicles] = useState<IVehicle[]>([]);
@@ -263,6 +297,74 @@ function HomePageContentInner() {
         fetchVehicles();
     }, [fetchVehicles]);
 
+    // Compute available brands from vehicles
+    const availableBrands = useMemo(() => {
+        const brands = new Set(vehicles.map(v => v.brand));
+        return Array.from(brands).sort();
+    }, [vehicles]);
+
+    // Compute min/max prices from vehicles
+    const { minPrice, maxPrice } = useMemo(() => {
+        if (vehicles.length === 0) return { minPrice: 250, maxPrice: 1800 };
+        const prices = vehicles.map(v => v.pricePerDay);
+        return {
+            minPrice: Math.floor(Math.min(...prices) / 50) * 50,
+            maxPrice: Math.ceil(Math.max(...prices) / 50) * 50,
+        };
+    }, [vehicles]);
+
+    // Filter and sort vehicles based on filter state
+    const filteredVehicles = useMemo(() => {
+        let filtered = [...vehicles];
+
+        // Filter by price range
+        filtered = filtered.filter(v =>
+            v.pricePerDay >= priceRange[0] && v.pricePerDay <= priceRange[1]
+        );
+
+        // Filter by bike type
+        if (bikeTypes.length > 0) {
+            filtered = filtered.filter(v =>
+                bikeTypes.some(type => v.name.toLowerCase().includes(type.toLowerCase()))
+            );
+        }
+
+        // Filter by fuel type
+        if (fuelType !== "Both") {
+            filtered = filtered.filter(v =>
+                v.fuelType.toLowerCase() === fuelType.toLowerCase()
+            );
+        }
+
+        // Filter by brand
+        if (selectedBrands.length > 0) {
+            filtered = filtered.filter(v => selectedBrands.includes(v.brand));
+        }
+
+        // Sort vehicles
+        switch (sortBy) {
+            case "priceLowHigh":
+                filtered.sort((a, b) => a.pricePerDay - b.pricePerDay);
+                break;
+            case "priceHighLow":
+                filtered.sort((a, b) => b.pricePerDay - a.pricePerDay);
+                break;
+            case "rating":
+                // Placeholder for rating sort - would need rating field in vehicle model
+                break;
+            case "popular":
+            default:
+                // Keep default order
+                break;
+        }
+
+        return filtered;
+    }, [vehicles, priceRange, bikeTypes, fuelType, selectedBrands, sortBy]);
+
+    useEffect(() => {
+        fetchVehicles();
+    }, [fetchVehicles]);
+
     const updateFilters = () => {
         if (!pickupDate || !pickupTime || !dropoffDate || !dropoffTime) {
             return;
@@ -373,285 +475,353 @@ function HomePageContentInner() {
     };
 
     return (
-        <div className="min-h-screen w-full bg-white dark:bg-[#0B0A1B] text-black dark:text-white pb-24">
+        <>
+            {/* Top Navigation - Desktop Only */}
+            <Topbar />
 
-            {/* Top Banner */}
-            <div className="w-full rounded-b-3xl relative overflow-hidden h-40">
-                {/* Light Mode Background */}
-                <div
-                    className="absolute inset-0 bg-cover bg-center bg-no-repeat dark:hidden rounded-b-3xl"
-                    style={{ backgroundImage: 'url(/lightNav.jpg)' }}
-                />
-
-                {/* Dark Mode Background */}
-                <div
-                    className="absolute inset-0 bg-cover bg-center bg-no-repeat hidden dark:block rounded-b-3xl"
-                    style={{ backgroundImage: 'url(/darkNav.jpg)' }}
-                />
-            </div>
-
-            {/* Horizontal Search Row - Overlapping */}
-            <div className="px-6 -mt-7 relative z-20 mb-2">
-                <div className="flex items-center gap-3">
-                    {/* Location and Date/Time Container */}
-                    <div className="flex-1 flex items-center gap-0 bg-white rounded-full shadow-md overflow-hidden">
-                        {/* Store Selector */}
-                        <div className="flex-1 border-r border-gray-200">
-                            <StoreSelector
-                                stores={allStores}
-                                selectedStore={selectedStore}
-                                onStoreSelect={handleStoreSelect}
-                                loading={storesLoading}
-                            />
-                        </div>
-
-                        {/* Date/Time Picker */}
-                        <button
-                            onClick={() => setShowFilters(!showFilters)}
-                            className="flex-1 py-3 px-4 flex items-center gap-2 min-w-0"
-                        >
-                            <Calendar size={18} className="text-gray-400 shrink-0" />
-                            <span className="text-gray-700 text-sm font-medium truncate">
-                                {startTime ? format(new Date(startTime), "MMM dd, HH:mm") : "Pickup date"}
-                            </span>
-                        </button>
+            <div className="min-h-screen w-full bg-white dark:bg-[#0B0A1B] text-black dark:text-white pb-24 md:pb-0 md:pt-20">
+                {/* Desktop Layout with Sidebar */}
+                <div className="hidden md:flex h-screen pt-4">
+                    {/* Left Sidebar - Filters */}
+                    <div className="w-64 flex-shrink-0 h-full overflow-hidden">
+                        <FilterSidebar
+                            sortBy={sortBy}
+                            onSortChange={setSortBy}
+                            priceRange={priceRange}
+                            onPriceRangeChange={setPriceRange}
+                            minPrice={minPrice}
+                            maxPrice={maxPrice}
+                            bikeTypes={bikeTypes}
+                            onBikeTypesChange={setBikeTypes}
+                            fuelType={fuelType}
+                            onFuelTypeChange={setFuelType}
+                            selectedBrands={selectedBrands}
+                            onBrandsChange={setSelectedBrands}
+                            availableBrands={availableBrands}
+                        />
                     </div>
 
-                    {/* Filter Button - Separate Circle */}
-                    <button
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="w-14 h-14 rounded-full bg-white shadow-md flex items-center justify-center shrink-0"
-                    >
-                        <SlidersHorizontal className="w-6 h-6 text-gray-700" />
-                    </button>
+                    {/* Main Content */}
+                    <div className="flex-1 overflow-y-auto px-6">
+                        {/* Desktop Filter Bar */}
+                        <DesktopFilterBar
+                            allStores={allStores}
+                            selectedStore={selectedStore}
+                            onStoreSelect={handleStoreSelect}
+                            storesLoading={storesLoading}
+                            startTime={startTime}
+                            endTime={endTime}
+                            onFilterClick={() => setShowFilters(true)}
+                        />
+
+                        {/* Vehicle Grid */}
+                        <VehicleGrid
+                            loading={loading}
+                            error={error}
+                            vehicles={filteredVehicles}
+                            pagination={pagination}
+                            currentPage={currentPage}
+                            onPageChange={changePage}
+                            onVehicleClick={handleVehicleClick}
+                        />
+                    </div>
                 </div>
-            </div>
 
-            {/* Filter Drawer */}
-            {/**
-             * @salman
-             * convert to shadcn modal
-             */}
-            {/* Filter Drawer - Using Shadcn Drawer */}
-            <Drawer open={showFilters} onOpenChange={setShowFilters}>
-                <DrawerContent className="max-w-[430px] mx-auto bg-white dark:bg-[#191B27] rounded-t-3xl p-0">
-                    <div className="w-full p-6 max-h-[80vh] overflow-y-auto">
-                        <DrawerHeader className="p-0 mb-4">
-                            <DrawerTitle className="text-xl font-semibold">Update Filters</DrawerTitle>
-                        </DrawerHeader>
+                {/* Mobile Layout */}
+                <div className="md:hidden">
+                    {/* Top Banner */}
+                    <div className="w-full rounded-b-3xl relative overflow-hidden h-40">
+                        <div
+                            className="absolute inset-0 bg-cover bg-center bg-no-repeat dark:hidden rounded-b-3xl"
+                            style={{ backgroundImage: 'url(/lightNav.jpg)' }}
+                        />
+                        <div
+                            className="absolute inset-0 bg-cover bg-center bg-no-repeat hidden dark:block rounded-b-3xl"
+                            style={{ backgroundImage: 'url(/darkNav.jpg)' }}
+                        />
+                    </div>
 
-                        <div className="space-y-4">
-                            <div>
-                                <h4 className="font-light mb-2">Pickup Date & Time</h4>
-                                <PickupSelector
-                                    pickup={true}
-                                    date={pickupDate}
-                                    time={pickupTime}
-                                    onDateChange={setPickupDate}
-                                    onTimeChange={setPickupTime}
-                                />
+                    {/* Search Row */}
+                    <div className="px-6 -mt-7 relative z-20 mb-2">
+                        <div className="flex items-center gap-3">
+                            <div className="flex-1 flex items-center gap-0 bg-white rounded-full shadow-md overflow-hidden">
+                                <div className="flex-1 border-r border-gray-200">
+                                    <StoreSelector
+                                        stores={allStores}
+                                        selectedStore={selectedStore}
+                                        onStoreSelect={handleStoreSelect}
+                                        loading={storesLoading}
+                                    />
+                                </div>
+                                <button
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    className="flex-1 py-3 px-4 flex items-center gap-2 min-w-0"
+                                >
+                                    <Calendar size={18} className="text-gray-400 shrink-0" />
+                                    <span className="text-gray-700 text-sm font-medium truncate">
+                                        {startTime ? format(new Date(startTime), "MMM dd, HH:mm") : "Pickup date"}
+                                    </span>
+                                </button>
                             </div>
-
-                            <div>
-                                <h4 className="font-light mb-2">Dropoff Date & Time</h4>
-                                <PickupSelector
-                                    pickup={false}
-                                    date={dropoffDate}
-                                    time={dropoffTime}
-                                    onDateChange={setDropoffDate}
-                                    onTimeChange={setDropoffTime}
-                                />
-                            </div>
-
-                            <Button
-                                onClick={updateFilters}
-                                disabled={!pickupDate || !pickupTime || !dropoffDate || !dropoffTime}
-                                className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] text-black font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            <button
+                                onClick={() => setShowFilters(!showFilters)}
+                                className="w-14 h-14 rounded-full bg-white shadow-md flex items-center justify-center shrink-0"
                             >
-                                Apply Filters
-                            </Button>
+                                <SlidersHorizontal className="w-6 h-6 text-gray-700" />
+                            </button>
                         </div>
                     </div>
-                </DrawerContent>
-            </Drawer>
 
-            {/* Vehicles Section */}
-            <div className="px-4 mt-5">
-                <h2 className="text-lg font-semibold">Available vehicles</h2>
+                    {/* Vehicle Grid */}
+                    <div className="px-4 mt-5">
+                        <VehicleGrid
+                            loading={loading}
+                            error={error}
+                            vehicles={filteredVehicles}
+                            pagination={pagination}
+                            currentPage={currentPage}
+                            onPageChange={changePage}
+                            onVehicleClick={handleVehicleClick}
+                        />
+                    </div>
+                </div>
 
-                {/* Skeleton Loading State */}
-                {loading && (
-                    <div className="grid gap-3 mt-4" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-                        {[...Array(4)].map((_, index) => (
+                {/* Filter Modal - Responsive */}
+                {isMobile ? (
+                    // Mobile: Bottom Drawer
+                    <Drawer open={showFilters} onOpenChange={setShowFilters}>
+                        <DrawerContent className="max-w-[430px] mx-auto bg-white dark:bg-[#191B27] rounded-t-3xl p-0">
+                            <div className="w-full p-6 max-h-[80vh] overflow-y-auto">
+                                <DrawerHeader className="p-0 mb-4">
+                                    <DrawerTitle className="text-xl font-semibold">Update Filters</DrawerTitle>
+                                </DrawerHeader>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <h4 className="font-light mb-2">Pickup Date & Time</h4>
+                                        <PickupSelector
+                                            pickup={true}
+                                            date={pickupDate}
+                                            time={pickupTime}
+                                            onDateChange={setPickupDate}
+                                            onTimeChange={setPickupTime}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-light mb-2">Dropoff Date & Time</h4>
+                                        <PickupSelector
+                                            pickup={false}
+                                            date={dropoffDate}
+                                            time={dropoffTime}
+                                            onDateChange={setDropoffDate}
+                                            onTimeChange={setDropoffTime}
+                                        />
+                                    </div>
+
+                                    <Button
+                                        onClick={updateFilters}
+                                        disabled={!pickupDate || !pickupTime || !dropoffDate || !dropoffTime}
+                                        className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] text-black font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Apply Filters
+                                    </Button>
+                                </div>
+                            </div>
+                        </DrawerContent>
+                    </Drawer>
+                ) : (
+                    // Desktop: Centered Dialog
+                    <Dialog open={showFilters} onOpenChange={setShowFilters}>
+                        <DialogContent className="max-w-md bg-white dark:bg-[#191B27]">
+                            <DialogHeader>
+                                <DialogTitle className="text-xl font-semibold">Update Filters</DialogTitle>
+                            </DialogHeader>
+
+                            <div className="space-y-4 mt-4">
+                                <div>
+                                    <h4 className="font-light mb-2">Pickup Date & Time</h4>
+                                    <PickupSelector
+                                        pickup={true}
+                                        date={pickupDate}
+                                        time={pickupTime}
+                                        onDateChange={setPickupDate}
+                                        onTimeChange={setPickupTime}
+                                    />
+                                </div>
+
+                                <div>
+                                    <h4 className="font-light mb-2">Dropoff Date & Time</h4>
+                                    <PickupSelector
+                                        pickup={false}
+                                        date={dropoffDate}
+                                        time={dropoffTime}
+                                        onDateChange={setDropoffDate}
+                                        onTimeChange={setDropoffTime}
+                                    />
+                                </div>
+
+                                <Button
+                                    onClick={updateFilters}
+                                    disabled={!pickupDate || !pickupTime || !dropoffDate || !dropoffTime}
+                                    className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] text-black font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Apply Filters
+                                </Button>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                )}
+
+                <ComingSoonDrawer open={open} setOpen={handleClose} />
+                <Navbar />
+            </div>
+        </>
+    );
+}
+
+// Vehicle Grid Component
+interface VehicleGridProps {
+    loading: boolean;
+    error: string;
+    vehicles: IVehicle[];
+    pagination: Pagination | null;
+    currentPage: number;
+    onPageChange: (page: number) => void;
+    onVehicleClick: (vehicleId: string) => void;
+}
+
+function VehicleGrid({ loading, error, vehicles, pagination, currentPage, onPageChange, onVehicleClick }: VehicleGridProps) {
+    return (
+        <>
+            <h2 className="text-lg font-semibold mb-4">Available vehicles</h2>
+
+            {/* Skeleton Loading State */}
+            {loading && (
+                <div className="grid gap-3 mt-4 md:grid-cols-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))' }}>
+                    {[...Array(6)].map((_, index) => (
+                        <Card
+                            key={`skeleton-${index}`}
+                            className="rounded-xl border shadow-[0_2px_8px_rgba(0,0,0,0.08)] h-full flex flex-col"
+                        >
+                            <CardContent className="flex flex-col gap-3 p-3 h-full">
+                                <div className="w-full aspect-16/10 bg-gray-200 dark:bg-gray-700 rounded-lg skeleton" />
+                                <div className="flex-1 flex flex-col space-y-2">
+                                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 skeleton" />
+                                    <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/2 skeleton" />
+                                    <div className="flex items-center gap-1.5 mt-1">
+                                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-12 skeleton" />
+                                        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16 skeleton" />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            )}
+
+            {/* Error State */}
+            {error && !loading && (
+                <div className="mt-4 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                    <p className="text-red-600 dark:text-red-400">{error}</p>
+                </div>
+            )}
+
+            {/* Empty State */}
+            {!loading && !error && vehicles.length === 0 && (
+                <div className="mt-8 text-center py-12">
+                    <div className="flex flex-col items-center justify-center">
+                        <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+                            <MapPin className="w-12 h-12 text-gray-400" />
+                        </div>
+                        <p className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                            No vehicles found
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 max-w-md">
+                            No vehicles are available for the selected filters.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Vehicle Cards */}
+            {!loading && !error && vehicles.length > 0 && (
+                <>
+                    <div className="grid gap-3 mt-4 grid-cols-2 md:grid-cols-4">
+                        {vehicles.map((vehicle) => (
                             <Card
-                                key={`skeleton-${index}`}
-                                className="rounded-xl border shadow-[0_2px_8px_rgba(0,0,0,0.08)] h-full flex flex-col"
+                                key={vehicle._id.toString()}
+                                onClick={() => onVehicleClick(vehicle._id.toString())}
+                                className="group relative rounded-xl border-0 bg-white dark:bg-gray-900 shadow-sm hover:shadow-lg active:scale-[0.98] transition-all duration-200 h-full flex flex-col cursor-pointer overflow-hidden"
                             >
-                                <CardContent className="flex flex-col gap-3 p-3 h-full">
-                                    {/* Image Skeleton */}
-                                    <div className="w-full aspect-16/10 bg-gray-200 dark:bg-gray-700 rounded-lg skeleton" />
-
-                                    {/* Content Skeleton */}
-                                    <div className="flex-1 flex flex-col space-y-2">
-                                        {/* Title Skeleton */}
-                                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 skeleton" />
-
-                                        {/* Price Skeleton */}
-                                        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/2 skeleton" />
-
-                                        {/* Badge and License Plate Skeleton */}
-                                        <div className="flex items-center gap-1.5 mt-1">
-                                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-12 skeleton" />
-                                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16 skeleton" />
+                                <CardContent className="flex flex-col p-0 h-full">
+                                    <div className="relative w-full aspect-16/10 overflow-hidden bg-white dark:bg-gray-900">
+                                        <Image
+                                            src={vehicle.image && vehicle.image.length > 0 ? vehicle.image[0] : "/bike.png"}
+                                            alt={vehicle.name}
+                                            fill
+                                            className="object-cover"
+                                            sizes="(max-width: 768px) 50vw, 33vw"
+                                        />
+                                    </div>
+                                    <div className="flex-1 flex flex-col p-3">
+                                        <div className="mb-2.5">
+                                            <h3 className="font-bold text-base text-gray-900 dark:text-white leading-tight">
+                                                {vehicle.brand}
+                                            </h3>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                                {vehicle.name}
+                                            </p>
+                                        </div>
+                                        <div className="relative mb-2.5 py-2">
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-xl font-bold text-[#FF6B00]">
+                                                    ₹{vehicle.pricePerDay}
+                                                </span>
+                                                <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">/day</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 mt-auto">
+                                            <div className="px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-[10px] font-medium text-gray-700 dark:text-gray-300">
+                                                {vehicle.fuelType}
+                                            </div>
+                                            <div className="px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-[10px] font-mono text-gray-600 dark:text-gray-400">
+                                                {vehicle.licensePlate}
+                                            </div>
                                         </div>
                                     </div>
                                 </CardContent>
                             </Card>
                         ))}
                     </div>
-                )}
 
-                {/* Error State */}
-                {error && !loading && (
-                    <div className="mt-4 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                        <p className="text-red-600 dark:text-red-400">{error}</p>
-                    </div>
-                )}
-
-                {/* Empty State */}
-                {!loading && !error && vehicles.length === 0 && (
-                    <div className="mt-8 text-center py-12">
-                        <div className="flex flex-col items-center justify-center">
-                            <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
-                                <MapPin className="w-12 h-12 text-gray-400" />
-                            </div>
-                            <p className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                No vehicles found
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 max-w-md">
-                                No vehicles are available for the selected dates and location.
-                            </p>
-                            <div className="flex flex-col gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                <p>Try:</p>
-                                <ul className="list-disc list-inside space-y-1 text-left">
-                                    <li>Adjusting your pickup or dropoff dates</li>
-                                    <li>Updating your location</li>
-                                    <li>Increasing the search radius</li>
-                                </ul>
-                            </div>
+                    {/* Pagination */}
+                    {pagination && pagination.totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-4 mt-6 mb-4">
+                            <Button
+                                onClick={() => onPageChange(currentPage - 1)}
+                                disabled={!pagination.hasPrev}
+                                className="rounded-full"
+                                variant="outline"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                            </Button>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                                Page {pagination.page} of {pagination.totalPages}
+                            </span>
+                            <Button
+                                onClick={() => onPageChange(currentPage + 1)}
+                                disabled={!pagination.hasNext}
+                                className="rounded-full"
+                                variant="outline"
+                            >
+                                <ChevronRight className="w-4 h-4" />
+                            </Button>
                         </div>
-                    </div>
-                )}
-
-                {/* Vehicle Cards */}
-                {!loading && !error && vehicles.length > 0 && (
-                    <>
-                        <div className="grid gap-3 mt-4" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-                            {vehicles.map((vehicle) => (
-                                <Card
-                                    key={vehicle._id.toString()}
-                                    onClick={() => handleVehicleClick(vehicle._id.toString())}
-                                    className="group relative rounded-xl border-0 bg-white dark:bg-gray-900 shadow-sm active:scale-[0.98] transition-all duration-200 h-full flex flex-col cursor-pointer overflow-hidden"
-                                >
-                                    <CardContent className="flex flex-col p-0 h-full">
-                                        {/* Image */}
-                                        <div className="relative w-full aspect-16/10 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
-                                            <Image
-                                                src={vehicle.image && vehicle.image.length > 0 ? vehicle.image[0] : "/bike.png"}
-                                                alt={vehicle.name}
-                                                fill
-                                                className="object-cover"
-                                                sizes="50vw"
-                                            />
-                                            {/* Image count badge - top right */}
-                                        </div>
-
-                                        {/* Content */}
-                                        <div className="flex-1 flex flex-col p-3">
-                                            {/* Brand and Model - compact */}
-                                            <div className="mb-2.5">
-                                                <h3 className="font-bold text-base text-gray-900 dark:text-white leading-tight">
-                                                    {vehicle.brand}
-                                                </h3>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                                    {vehicle.name}
-                                                </p>
-                                            </div>
-
-                                            {/* Pricing - Compact gradient card */}
-                                            <div className="relative mb-2.5 py-2">
-                                                <div className="flex items-baseline gap-1">
-                                                    <span className="text-xl font-bold text-[#FF6B00]">
-                                                        ₹{vehicle.pricePerDay}
-                                                    </span>
-                                                    <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">/day</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Details - Compact pills */}
-                                            <div className="flex items-center gap-1.5 mt-auto">
-                                                <div className="px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-[10px] font-medium text-gray-700 dark:text-gray-300">
-                                                    {vehicle.fuelType}
-                                                </div>
-                                                <div className="px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-[10px] font-mono text-gray-600 dark:text-gray-400">
-                                                    {vehicle.licensePlate}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-
-                        {/* Pagination */}
-                        {pagination && pagination.totalPages > 1 && (
-                            <div className="flex items-center justify-center gap-4 mt-6 mb-4">
-                                <Button
-                                    onClick={() => changePage(currentPage - 1)}
-                                    disabled={!pagination.hasPrev}
-                                    className="rounded-full"
-                                    variant="outline"
-                                >
-                                    <ChevronLeft className="w-4 h-4" />
-                                </Button>
-
-                                <span className="text-sm text-gray-600 dark:text-gray-400">
-                                    Page {pagination.page} of {pagination.totalPages}
-                                </span>
-
-                                <Button
-                                    onClick={() => changePage(currentPage + 1)}
-                                    disabled={!pagination.hasNext}
-                                    className="rounded-full"
-                                    variant="outline"
-                                >
-                                    <ChevronRight className="w-4 h-4" />
-                                </Button>
-                            </div>
-                        )}
-                    </>
-                )}
-            </div>
-
-            {/* Bottom Banner Section */}
-            {/* <div className="w-full mt-8 mb-6 px-4">
-                <div className="relative w-full aspect-[16/5] rounded-2xl overflow-hidden">
-                    <div 
-                        className="absolute inset-0 bg-cover bg-center bg-no-repeat dark:hidden rounded-2xl"
-                        style={{ backgroundImage: 'url(/lightBanner.png)' }}
-                    />
-                    
-                    <div 
-                        className="absolute inset-0 bg-cover bg-center bg-no-repeat hidden dark:block rounded-2xl"
-                        style={{ backgroundImage: 'url(/darkBanner.png)' }}
-                    />
-                </div>
-            </div> */}
-
-            <ComingSoonDrawer open={open} setOpen={handleClose} />
-            {/* Bottom Navigation */}
-            <Navbar />
-        </div>
+                    )}
+                </>
+            )}
+        </>
     );
 }
 
