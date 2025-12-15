@@ -202,6 +202,16 @@ export default function LandingPage() {
           priority
           suppressHydrationWarning
         />
+        {/* Logo in top-left corner */}
+        <div className="absolute top-4 left-4 z-10">
+          <Image
+            src="/logo.png"
+            alt="TooBikes Logo"
+            width={60}
+            height={60}
+            className="object-contain"
+          />
+        </div>
       </div>
 
 
