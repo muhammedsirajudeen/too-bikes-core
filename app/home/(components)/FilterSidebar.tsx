@@ -85,7 +85,7 @@ export default function FilterSidebar({
     };
 
     return (
-        <div className="w-full h-full p-6 overflow-y-auto bg-white dark:bg-[#1a1a2e]">
+        <div className="w-full h-full p-6 overflow-y-auto bg-white dark:bg-[#101828]">
             {/* Filters Header */}
             <div className="flex items-center gap-2 mb-6">
                 <svg

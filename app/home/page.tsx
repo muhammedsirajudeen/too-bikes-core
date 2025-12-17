@@ -545,6 +545,16 @@ function HomePageContentInner() {
                             className="absolute inset-0 bg-cover bg-center bg-no-repeat hidden dark:block rounded-b-3xl"
                             style={{ backgroundImage: 'url(/darkNav.jpg)' }}
                         />
+                        {/* Logo in top-left corner */}
+                        <div className="absolute top-4 left-4 z-10">
+                            <Image
+                                src="/logo.png"
+                                alt="TooBikes Logo"
+                                width={40}
+                                height={40}
+                                className="object-contain"
+                            />
+                        </div>
                     </div>
 
                     {/* Search Row */}

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
@@ -44,6 +44,16 @@ export default function LandingPage() {
   const [_stores, setStores] = useState<IStore[]>([]);
   const [selectedStore, setSelectedStore] = useState<IStore | null>(null);
   const [storesLoading, setStoresLoading] = useState(true);
+
+  // Ref for scrolling to button
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Scroll handler for when date/time pickers open
+  const scrollToButton = () => {
+    setTimeout(() => {
+      buttonRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -204,6 +214,16 @@ export default function LandingPage() {
           priority
           suppressHydrationWarning
         />
+        {/* Logo in top-left corner */}
+        <div className="absolute top-4 left-4 z-10">
+          <Image
+            src="/logo.png"
+            alt="TooBikes Logo"
+            width={60}
+            height={60}
+            className="object-contain"
+          />
+        </div>
       </div>
 
 
@@ -224,6 +244,7 @@ export default function LandingPage() {
               onDateChange={setPickupDate}
               onTimeChange={setPickupTime}
               error={pickupError}
+              onOpen={scrollToButton}
             />
 
             <h4 className="font-light m-3">Select your dropoff time</h4>
@@ -235,10 +256,12 @@ export default function LandingPage() {
               onTimeChange={setDropoffTime}
               error={dropoffError}
               minDate={pickupDate}
+              onOpen={scrollToButton}
             />
 
 
             <Button
+              ref={buttonRef}
               onClick={validateAndNavigate}
               disabled={isRequestingLocation || storesLoading || !selectedStore || !pickupDate || !pickupTime || !dropoffDate || !dropoffTime}
               className="w-full h-12 rounded-full bg-[#F4AA05] hover:bg-[#cf9002] mt-24 text-black font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"

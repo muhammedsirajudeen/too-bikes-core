@@ -20,13 +20,17 @@ export default function Topbar() {
 
     return (
         <div className="hidden md:flex fixed top-0 left-0 right-0 z-50 px-6 py-4 bg-white dark:bg-[#0B0A1B]">
-            <div className="w-full max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+            <div className="w-full px-6 py-3 flex items-center justify-between">
                 {/* Logo */}
                 <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-[#FF6B00] rounded-lg flex items-center justify-center">
-                        <span className="text-white font-bold text-lg">TB</span>
-                    </div>
-                    <span className="text-xl font-bold text-gray-800 dark:text-white">TooBike</span>
+                    <Image
+                        src="/log.jpg"
+                        alt="TooBike Logo"
+                        width={40}
+                        height={40}
+                        className="rounded-lg"
+                    />
+                    <span className="text-xl font-bold text-gray-800 dark:text-white">TooBikes</span>
                 </div>
 
                 {/* Navigation Items */}
