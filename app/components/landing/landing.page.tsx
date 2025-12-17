@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import PickupSelector from "./pickup";
+import { ThemeToggle } from "../ThemeToggle";
 
 import { useRouter } from "next/navigation";
 import ROUTE_CONSTANTS from "@/constants/routeConstants";
@@ -191,6 +192,7 @@ export default function LandingPage() {
 
   return (
     <div className="relative w-full min-h-screen bg-white dark:bg-[#0B0A1B]">
+      <ThemeToggle />
 
       {/* FIXED RESPONSIVE HEADER IMAGE */}
       <div className="fixed top-0 left-0 w-full h-[clamp(320px,45vh,500px)] z-0">

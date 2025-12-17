@@ -5,7 +5,6 @@ import { useAuth } from "@/contexts/auth.context";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import Image from "next/image";
 
 export default function Topbar() {
     const { requireAuth } = useAuth();

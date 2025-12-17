@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import axiosInstance from "@/lib/axios";
-import { User, Phone, Mail, LogOut, Loader2 } from "lucide-react";
+import { User, Phone, Mail, LogOut } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import Navbar from "@/app/home/(components)/navbar";
+import { ThemeToggle } from "@/app/components/ThemeToggle";
+
+// Prevent static generation since this page requires authentication
+export const dynamic = 'force-dynamic';
 
 interface UserProfile {
     id: string;
@@ -69,18 +75,63 @@ export default function ProfilePage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 dark:bg-[#0A0A1B] flex items-center justify-center">
-                <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#FF6B00]" />
-                    <p className="text-gray-600 dark:text-gray-400">Loading profile...</p>
+            <div className="min-h-screen bg-gray-50 dark:bg-[#0A0A1B] pb-28">
+                <ThemeToggle />
+
+                {/* Header Skeleton */}
+                <div className="bg-white dark:bg-[#131224] pt-12 pb-20 px-4">
+                    <div className="max-w-2xl mx-auto">
+                        <div className="h-9 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-2 skeleton" />
+                        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-56 skeleton" />
+                    </div>
                 </div>
+
+                {/* Profile Card Skeleton */}
+                <div className="max-w-2xl mx-auto px-4 -mt-12">
+                    <Card className="rounded-2xl shadow-lg overflow-hidden">
+                        <CardContent className="p-0">
+                            {/* Avatar Section Skeleton */}
+                            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-full skeleton" />
+                                    <div className="flex-1">
+                                        <div className="h-7 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-2 skeleton" />
+                                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 skeleton" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Profile Information Skeleton */}
+                            <div className="p-6 space-y-4">
+                                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-4 skeleton" />
+
+                                {[1, 2, 3].map((i) => (
+                                    <div key={i} className="p-4 bg-gray-50 dark:bg-[#1A1A2E] rounded-lg">
+                                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 mb-2 skeleton" />
+                                        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-40 skeleton" />
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Logout Button Skeleton */}
+                            <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+                                <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-lg skeleton" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <Suspense fallback={<div className="h-20" />}>
+                    <Navbar />
+                </Suspense>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="min-h-screen bg-gray-50 dark:bg-[#0A0A1B] flex items-center justify-center p-4">
+            <div className="min-h-screen bg-gray-50 dark:bg-[#0A0A1B] flex items-center justify-center p-4 pb-28">
+                <ThemeToggle />
                 <div className="bg-white dark:bg-[#131224] rounded-2xl p-6 max-w-md w-full">
                     <div className="text-center">
                         <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -98,17 +149,22 @@ export default function ProfilePage() {
                         </button>
                     </div>
                 </div>
+                <Suspense fallback={<div className="h-20" />}>
+                    <Navbar />
+                </Suspense>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-[#0A0A1B] pb-24">
+        <div className="min-h-screen bg-gray-50 dark:bg-[#0A0A1B] pb-28">
+            <ThemeToggle />
+
             {/* Header */}
-            <div className="bg-gradient-to-br from-[#FF6B00] to-[#FF8C42] pt-12 pb-20 px-4">
+            <div className="bg-white dark:bg-[#131224] pt-12 pb-20 px-4">
                 <div className="max-w-2xl mx-auto">
-                    <h1 className="text-3xl font-bold text-white mb-2">Profile</h1>
-                    <p className="text-white/90">Manage your account information</p>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Profile</h1>
+                    <p className="text-gray-600 dark:text-gray-400">Manage your account information</p>
                 </div>
             </div>
 
@@ -118,7 +174,7 @@ export default function ProfilePage() {
                     {/* Avatar Section */}
                     <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                         <div className="flex items-center gap-4">
-                            <div className="w-20 h-20 bg-gradient-to-br from-[#FF6B00] to-[#FF8C42] rounded-full flex items-center justify-center">
+                            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                                 <User className="w-10 h-10 text-white" />
                             </div>
                             <div>
@@ -140,7 +196,7 @@ export default function ProfilePage() {
 
                         {/* Phone Number */}
                         <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-[#1A1A2E] rounded-lg">
-                            <Phone className="w-5 h-5 text-[#FF6B00] mt-0.5" />
+                            <Phone className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
                             <div className="flex-1">
                                 <p className="text-sm text-gray-500 dark:text-gray-400">Phone Number</p>
                                 <p className="text-base font-medium text-gray-900 dark:text-white">
@@ -152,7 +208,7 @@ export default function ProfilePage() {
                         {/* Email */}
                         {profile?.email && (
                             <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-[#1A1A2E] rounded-lg">
-                                <Mail className="w-5 h-5 text-[#FF6B00] mt-0.5" />
+                                <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
                                 <div className="flex-1">
                                     <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
                                     <p className="text-base font-medium text-gray-900 dark:text-white">
@@ -165,7 +221,7 @@ export default function ProfilePage() {
                         {/* Name */}
                         {profile?.name && (
                             <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-[#1A1A2E] rounded-lg">
-                                <User className="w-5 h-5 text-[#FF6B00] mt-0.5" />
+                                <User className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
                                 <div className="flex-1">
                                     <p className="text-sm text-gray-500 dark:text-gray-400">Full Name</p>
                                     <p className="text-base font-medium text-gray-900 dark:text-white">
@@ -198,7 +254,7 @@ export default function ProfilePage() {
                         >
                             {loggingOut ? (
                                 <>
-                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                     Logging out...
                                 </>
                             ) : (
@@ -211,6 +267,11 @@ export default function ProfilePage() {
                     </div>
                 </div>
             </div>
+
+            {/* Bottom Navigation */}
+            <Suspense fallback={<div className="h-20" />}>
+                <Navbar />
+            </Suspense>
         </div>
     );
 }

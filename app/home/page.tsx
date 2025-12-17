@@ -41,6 +41,7 @@ import { IStore } from "@/core/interface/model/IStore.model";
 import { StoreSelector } from "@/components/StoreSelector";
 import FilterSidebar from "./(components)/FilterSidebar";
 import DesktopFilterBar from "./(components)/DesktopFilterBar";
+import { ThemeToggle } from "../components/ThemeToggle";
 
 function HomePageContentInner() {
     const [open, setOpen] = useState(false);
@@ -135,22 +136,26 @@ function HomePageContentInner() {
             setDropoffDate(end);
             setPickupTime(format(start, "HH:mm"));
             setDropoffTime(format(end, "HH:mm"));
-
-            // If storeId is in URL, find and set that store
-            if (storeIdParam && allStores.length > 0) {
-                const store = allStores.find(s => s._id.toString() === storeIdParam);
-                if (store) {
-                    setSelectedStore(store);
-                }
-            } else if (!selectedStore && allStores.length > 0 && !storesLoading) {
-                // Auto-select nearest store based on user location, or fallback to first store
-                findNearestStore();
-            }
         } else {
             setError("Missing required parameters. Please start from the landing page.");
             setLoading(false);
         }
-    }, [searchParams, allStores, storesLoading]);
+
+        // Handle store selection: prioritize geolocation when no storeId in URL
+        if (!storeIdParam && allStores.length > 0 && !storesLoading && !selectedStore) {
+            // No storeId in URL - auto-select nearest store based on user location
+            findNearestStore();
+        } else if (storeIdParam && allStores.length > 0) {
+            // storeId in URL - use the specified store
+            const store = allStores.find(s => s._id.toString() === storeIdParam);
+            if (store) {
+                setSelectedStore(store);
+            } else {
+                // Invalid storeId - fallback to nearest store
+                findNearestStore();
+            }
+        }
+    }, [searchParams, allStores, storesLoading, selectedStore]);
 
     // Find nearest store based on user's geolocation
     const findNearestStore = async () => {
@@ -476,6 +481,7 @@ function HomePageContentInner() {
 
     return (
         <>
+            <ThemeToggle />
             {/* Top Navigation - Desktop Only */}
             <Topbar />
 
@@ -694,11 +700,11 @@ interface VehicleGridProps {
 function VehicleGrid({ loading, error, vehicles, pagination, currentPage, onPageChange, onVehicleClick }: VehicleGridProps) {
     return (
         <>
-            <h2 className="text-lg font-semibold mb-4">Available vehicles</h2>
+            {!loading && <h2 className="text-lg font-semibold mb-4">Available vehicles</h2>}
 
             {/* Skeleton Loading State */}
             {loading && (
-                <div className="grid gap-3 mt-4 md:grid-cols-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))' }}>
+                <div className="grid gap-3 mt-4 grid-cols-2 md:grid-cols-4">
                     {[...Array(6)].map((_, index) => (
                         <Card
                             key={`skeleton-${index}`}

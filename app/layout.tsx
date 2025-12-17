@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "./provider/theme.provider";
-import { ThemeToggle } from "./components/ThemeToggle";
 import { AuthProvider } from "@/contexts/auth.context";
 
 import { Poppins } from "next/font/google";
@@ -32,7 +31,6 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <RouterLoadingProvider>
-              <ThemeToggle />
               {children}
             </RouterLoadingProvider>
           </AuthProvider>

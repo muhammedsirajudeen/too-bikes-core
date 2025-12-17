@@ -17,6 +17,7 @@ import { IFAQ } from "@/core/interface/model/IFaq.model";
 import { VehicleDetailResponse } from "@/app/api/v1/available-vehicles/[id]/route";
 import { IStore } from "@/core/interface/model/IStore.model";
 import { IVehicle } from "@/core/interface/model/IVehicle.model";
+import { checkFavoriteStatus } from "@/services/client/favorites.service";
 
 interface VehicleDetailPageProps {
   params: Promise<{ id: string }>;
@@ -36,6 +37,7 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
   const [isLicenseModalOpen, setIsLicenseModalOpen] = useState<boolean>(false);
   const [_userPhoneNumber, setUserPhoneNumber] = useState<string>("");
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const [authContext, setAuthContext] = useState<"booking" | "favorite">("booking");
 
   // Get pickup/drop details from URL params or use defaults
   const pickupDateParam = searchParams.get("pickupDate");
@@ -87,6 +89,21 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
       setVehicle(data.data.vehicle);
       setFaqs(data.data.FAQ || []);
       setError("");
+
+      // Check if user is authenticated and fetch favorite status
+      const token = localStorage.getItem("auth_token");
+      if (token) {
+        try {
+          const favoriteResponse = await checkFavoriteStatus(id);
+          if (favoriteResponse.success && favoriteResponse.data) {
+            setIsFavorite(favoriteResponse.data.isFavorite);
+          }
+        } catch (error) {
+          // User not authenticated or error checking favorite status
+          // Silently fail - favorite will default to false
+          console.log("Could not check favorite status:", error);
+        }
+      }
     } catch (_err) {
       const axiosError = _err as AxiosError<{
         message?: string;
@@ -176,6 +193,9 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
      */
     if (!vehicle) return;
 
+    // Set context to booking
+    setAuthContext("booking");
+
     // Check if user is already authenticated
     const token = localStorage.getItem("auth_token");
 
@@ -222,6 +242,13 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
     setUserPhoneNumber(phoneNumber);
     setIsAuthModalOpen(false);
 
+    // If auth was triggered by favorite button, don't redirect to booking flow
+    if (authContext === "favorite") {
+      // User is now authenticated, they can try favoriting again
+      return;
+    }
+
+    // Auth was triggered by booking flow, continue with booking
     try {
       // Check if user has already uploaded license
       const licenseCheckResponse = await axiosInstance.get("/api/v1/license/check");
@@ -281,9 +308,38 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
     );
   }
 
-  const handleFavoriteToggle = (favorite: boolean) => {
-    setIsFavorite(favorite);
-    // You can add API call here to save favorite state
+  const handleFavoriteToggle = async (favorite: boolean) => {
+    // Check if user is authenticated
+    const token = localStorage.getItem("auth_token");
+
+    if (!token) {
+      // User not authenticated, show auth modal for favorite context
+      setAuthContext("favorite");
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    try {
+      if (favorite) {
+        // Add to favorites
+        const { addToFavorites } = await import("@/services/client/favorites.service");
+        const response = await addToFavorites(id);
+        if (response.success) {
+          setIsFavorite(true);
+        }
+      } else {
+        // Remove from favorites
+        const { removeFromFavorites } = await import("@/services/client/favorites.service");
+        const response = await removeFromFavorites(id);
+        if (response.success) {
+          setIsFavorite(false);
+        }
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      // Revert the UI state on error
+      setIsFavorite(!favorite);
+    }
   };
 
   // const totalRent = vehicle.pricePerHour;

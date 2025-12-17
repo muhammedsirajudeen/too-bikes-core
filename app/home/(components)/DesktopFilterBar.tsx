@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, MapPin, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { format } from "date-fns";
 import { IStore } from "@/core/interface/model/IStore.model";
 import { StoreSelector } from "@/components/StoreSelector";
