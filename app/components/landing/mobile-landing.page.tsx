@@ -215,13 +215,13 @@ export default function MobileLandingPage() {
           suppressHydrationWarning
         />
         {/* Logo in top-left corner */}
-        <div className="absolute top-4 left-4 z-10 bg-[#F4AA05] rounded-2xl p-2">
+        <div className="absolute top-3 left-3 z-10 bg-[#F4AA05] rounded-xl p-1.5 md:p-2 md:rounded-2xl">
           <Image
             src="/logo.png"
             alt="TooBikes Logo"
-            width={48}
-            height={48}
-            className="object-contain"
+            width={32}
+            height={32}
+            className="object-contain md:w-12 md:h-12"
           />
         </div>
       </div>
