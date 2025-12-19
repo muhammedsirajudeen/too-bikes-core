@@ -12,7 +12,7 @@ export function LicenseUploadInstructions() {
                     <ul className="text-xs text-blue-800 dark:text-blue-400 space-y-1">
                         <li>• Ensure the license is clearly visible and readable</li>
                         <li>• Accepted formats: JPEG, PNG, or PDF</li>
-                        <li>• Maximum file size: 5MB per file</li>
+                        <li>• Maximum total size: 5MB (both images combined)</li>
                         <li>• Avoid blurry or dark images</li>
                         <li>• Make sure all text and details are legible</li>
                     </ul>

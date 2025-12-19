@@ -113,6 +113,16 @@ export default function LicenseUploadModal({
             return;
         }
 
+        // Check total file size (both images combined should be under 5MB)
+        const totalSize = frontImage.size + backImage.size;
+        const maxTotalSize = 5 * 1024 * 1024; // 5MB in bytes
+
+        if (totalSize > maxTotalSize) {
+            const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+            setError(`Total file size (${totalSizeMB}MB) exceeds the 5MB limit. Please compress your images or use smaller files.`);
+            return;
+        }
+
         setIsSubmitting(true);
         setError("");
 
@@ -145,6 +155,9 @@ export default function LicenseUploadModal({
             if (response.ok && data.success) {
                 // Success - call onComplete callback
                 onComplete(frontImage, backImage);
+            } else if (response.status === 413) {
+                // Handle 413 Payload Too Large specifically
+                setError("Files are too large. Please ensure both images combined are under 5MB.");
             } else {
                 // API returned an error
                 setError(data.message || "Failed to upload license. Please try again.");

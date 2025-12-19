@@ -41,6 +41,12 @@ const nextConfig: NextConfig = {
   },
   // Set outputFileTracingRoot to fix workspace root warning
   outputFileTracingRoot: process.cwd(),
+  // Configure API routes to accept larger file uploads (5MB limit)
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '5mb',
+    },
+  },
 };
 
 export default nextConfig;
