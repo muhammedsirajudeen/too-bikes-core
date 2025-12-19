@@ -24,13 +24,15 @@ export default function Topbar() {
             <div className="w-full px-6 py-3 flex items-center justify-between">
                 {/* Logo */}
                 <div className="flex items-center gap-2">
-                    <Image
-                        src="/log.jpg"
-                        alt="TooBike Logo"
-                        width={40}
-                        height={40}
-                        className="rounded-lg"
-                    />
+                    <div className="bg-[#F4AA05] rounded-2xl p-2">
+                        <Image
+                            src="/logo.png"
+                            alt="TooBike Logo"
+                            width={36}
+                            height={36}
+                            className="rounded-lg"
+                        />
+                    </div>
                     <span className="text-xl font-bold text-gray-800 dark:text-white">TooBikes</span>
                 </div>
 

@@ -546,12 +546,12 @@ function HomePageContentInner() {
                             style={{ backgroundImage: 'url(/darkNav.jpg)' }}
                         />
                         {/* Logo in top-left corner */}
-                        <div className="absolute top-4 left-4 z-10">
+                        <div className="absolute top-4 left-4 z-10 bg-[#F4AA05] rounded-2xl p-2">
                             <Image
                                 src="/logo.png"
                                 alt="TooBikes Logo"
-                                width={40}
-                                height={40}
+                                width={36}
+                                height={36}
                                 className="object-contain"
                             />
                         </div>
