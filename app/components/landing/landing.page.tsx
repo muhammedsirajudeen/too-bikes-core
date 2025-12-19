@@ -34,14 +34,14 @@ export default function LandingPage() {
   // Validation errors
   const [pickupError, setPickupError] = useState<string>("");
   const [dropoffError, setDropoffError] = useState<string>("");
-  const [_locationError, setLocationError] = useState<string | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   // Location state
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
 
   // Store state
-  const [_stores, setStores] = useState<IStore[]>([]);
+  const [stores, setStores] = useState<IStore[]>([]);
   const [selectedStore, setSelectedStore] = useState<IStore | null>(null);
   const [storesLoading, setStoresLoading] = useState(true);
 

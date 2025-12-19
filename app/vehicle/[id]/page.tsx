@@ -35,7 +35,7 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
   const [error, setError] = useState<string>("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isLicenseModalOpen, setIsLicenseModalOpen] = useState<boolean>(false);
-  const [_userPhoneNumber, setUserPhoneNumber] = useState<string>("");
+  const [userPhoneNumber, setUserPhoneNumber] = useState<string>("");
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [authContext, setAuthContext] = useState<"booking" | "favorite">("booking");
 

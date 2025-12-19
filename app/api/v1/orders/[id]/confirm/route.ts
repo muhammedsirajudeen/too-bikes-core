@@ -92,9 +92,10 @@ export const POST = withLoggingAndErrorHandling(
 
             // Verify order belongs to the authenticated user
             // Handle both populated (IUser object) and unpopulated (ObjectId) cases
-            const orderUserId = (order.user as any)._id
-                ? (order.user as any)._id.toString()
-                : order.user.toString();
+            const orderUser = order.user as unknown;
+            const orderUserId = typeof orderUser === 'object' && orderUser && typeof orderUser === 'object' && '_id' in orderUser
+                ? (orderUser as { _id: { toString(): string } })._id.toString()
+                : String(orderUser);
 
             if (orderUserId !== decoded.id) {
                 console.error(`Authorization failed: Order user ${orderUserId} !== Authenticated user ${decoded.id}`);

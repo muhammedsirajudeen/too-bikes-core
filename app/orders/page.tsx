@@ -200,7 +200,7 @@ function OrdersPage() {
                                 No Orders Yet
                             </h2>
                             <p className="text-gray-600 dark:text-gray-400 mb-6">
-                                You haven't placed any orders yet. Start browsing vehicles!
+                                You haven&apos;t placed any orders yet. Start browsing vehicles!
                             </p>
                             <button
                                 onClick={() => router.push("/home")}
