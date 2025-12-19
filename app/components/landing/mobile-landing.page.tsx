@@ -207,7 +207,7 @@ export default function MobileLandingPage() {
       {/* FIXED RESPONSIVE HEADER IMAGE */}
       <div className="fixed top-0 left-0 w-full h-[clamp(320px,45vh,500px)] z-0">
         <Image
-          src={isLight ? "/landing/home_light.png" : "/landing/home_dark.png"}
+          src={isLight ? "/day_wm.png" : "/night_wm.png"}
           alt="Scooter"
           fill
           className="object-cover object-center"
