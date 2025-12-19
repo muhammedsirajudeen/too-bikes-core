@@ -4,14 +4,13 @@ import { generateAccessToken, generateRefreshToken } from "@/utils/jwt.utils";
 import { UserService } from "@/services/server/user.service";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-
-// Hardcoded OTP for now
-const HARDCODED_OTP = "000111";
+import axios from "axios";
 
 // Schema for OTP verification
 const verifyOTPSchema = z.object({
     phoneNumber: z.string().regex(/^[6-9]\d{9}$/, "Invalid Indian phone number"),
     otp: z.string().length(6, "OTP must be 6 digits"),
+    token: z.string().min(1, "Token is required"),
 });
 
 export interface VerifyOTPResponse {
@@ -28,6 +27,28 @@ export interface VerifyOTPResponse {
 
 const userService = new UserService();
 
+const msg91tokenVerification = async (token: string) => {
+    try {
+        await axios.post(
+            'https://control.msg91.com/api/v5/widget/verifyAccessToken',
+            {
+                "authkey": "483758AprO3Q6rJe694551e1P1",
+                "access-token": token
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                }
+            }
+        );
+        return true;
+    } catch (error) {
+        console.log(error)
+        return false;
+    }
+}
+
 export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => {
     const body = await request.json();
     const validated = verifyOTPSchema.safeParse(body);
@@ -41,13 +62,19 @@ export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => 
     }
 
     // Verify OTP matches hardcoded value
-    if (validated.data.otp !== HARDCODED_OTP) {
+    // if (validated.data.otp !== HARDCODED_OTP) {
+    //     return NextResponse.json({
+    //         success: false,
+    //         message: "Invalid OTP",
+    //     }, { status: HttpStatus.UNAUTHORIZED });
+    // }
+    const msg91tokenVerificationResult = await msg91tokenVerification(validated.data.token)
+    if (!msg91tokenVerificationResult) {
         return NextResponse.json({
             success: false,
-            message: "Invalid OTP",
+            message: "Invalid token",
         }, { status: HttpStatus.UNAUTHORIZED });
     }
-
     // Find or create user by phone number
     const userResult = await userService.findOrCreateUser(validated.data.phoneNumber);
 

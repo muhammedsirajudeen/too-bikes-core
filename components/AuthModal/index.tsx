@@ -15,6 +15,33 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
+import Msg91Otp from "./msg91.init";
+
+// Type definitions for MSG91 SDK
+interface MSG91SuccessData {
+    message: string;
+    type?: string;
+}
+
+interface MSG91ErrorData {
+    message?: string;
+    type?: string;
+}
+
+declare global {
+    interface Window {
+        sendOtp: (
+            identifier: string,
+            onSuccess: (data: MSG91SuccessData) => void,
+            onError: (error: MSG91ErrorData) => void
+        ) => void;
+        verifyOtp: (
+            otp: number,
+            onSuccess: (data: MSG91SuccessData) => void,
+            onError: (error: MSG91ErrorData) => void
+        ) => void;
+    }
+}
 
 // Modal states
 type ModalState = "PHONE_INPUT" | "OTP_VERIFICATION";
@@ -51,8 +78,11 @@ export default function AuthModal({
     const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
     const [timeLeft, setTimeLeft] = useState(59);
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
+    const [serverRender, setServerRender] = useState(false)
     // Reset state when modal opens
+    useEffect(() => {
+        setServerRender(true)
+    }, [])
     useEffect(() => {
         if (isOpen) {
             setModalState("PHONE_INPUT");
@@ -107,17 +137,30 @@ export default function AuthModal({
             setPhoneError("");
             setOtpGenerateSuccess("");
 
+            // MSG91 requires country code without + sign
+            const identifierWithCountryCode = `91${phoneNumber}`;
+            console.log('Sending OTP to:', identifierWithCountryCode);
+
+            window.sendOtp(
+                identifierWithCountryCode, // Must include country code (91 for India)
+                (data) => console.log('OTP sent successfully:', data),
+                (error) => {
+                    console.error('MSG91 Error:', error);
+                    setPhoneError(error.message || 'Failed to send OTP');
+                    setIsGeneratingOTP(false);
+                }
+            );
             // Call API to generate OTP
-            const response = await axiosInstance.post("/api/v1/auth/generate-otp", {
-                phoneNumber,
-            });
+            // const response = await axiosInstance.post("/api/v1/auth/generate-otp", {
+            //     phoneNumber,
+            // });
 
-            const data = response.data;
+            // const data = response.data;
 
-            if (!data.success) {
-                setPhoneError(data.message || "Failed to generate OTP");
-                return;
-            }
+            // if (!data.success) {
+            //     setPhoneError(data.message || "Failed to generate OTP");
+            //     return;
+            // }
 
             // Show success message
             setOtpGenerateSuccess("OTP sent successfully to your WhatsApp");
@@ -204,10 +247,33 @@ export default function AuthModal({
             setOtpError("");
             setOtpSuccess("");
 
-            // Call API to verify OTP
+            // Wrap MSG91 verifyOtp in a Promise to wait for the callback
+            const token = await new Promise<string>((resolve, reject) => {
+                window.verifyOtp(
+                    parseInt(otpString),
+                    (data) => {
+                        console.log('OTP verified successfully:', data);
+                        // The token is in data.message
+                        if (data && data.message) {
+                            resolve(data.message);
+                        } else {
+                            reject(new Error('No token received from MSG91'));
+                        }
+                    },
+                    (error) => {
+                        console.error('MSG91 verification error:', error);
+                        reject(new Error(error?.message || 'OTP verification failed'));
+                    }
+                );
+            });
+
+            console.log('Received token from MSG91:', token);
+
+            // Call API to verify OTP with the token from MSG91
             const response = await axiosInstance.post("/api/v1/auth/verify-otp", {
                 phoneNumber,
                 otp: otpString,
+                token: token,
             });
 
             const data = response.data;
@@ -231,8 +297,12 @@ export default function AuthModal({
                 onComplete(phoneNumber, otpString);
             }, 500);
         } catch (err: unknown) {
+            // Handle MSG91 errors
+            if (err instanceof Error && err.message.includes('MSG91')) {
+                setOtpError(err.message);
+            }
             // Handle Axios error structure
-            if (axios.isAxiosError(err) && err.response) {
+            else if (axios.isAxiosError(err) && err.response) {
                 setOtpError(err.response.data.message || "Failed to verify OTP");
             } else {
                 setOtpError("Failed to verify OTP. Please try again.");
@@ -298,6 +368,9 @@ export default function AuthModal({
             onOpenChange={(open) => !open && handleClose()}
             dismissible={true}
         >
+            {
+                serverRender && <Msg91Otp />
+            }
             <DrawerContent
                 className={cn(
                     "max-w-[430px] mx-auto",

@@ -19,6 +19,7 @@ export class OrderService {
         startTime: Date;
         endTime: Date;
         totalAmount: number;
+        razorpayOrderId?: string;
     }): Promise<IOrder> {
         const order = await this.orderRepository.create({
             user: orderData.userId,
@@ -27,6 +28,7 @@ export class OrderService {
             startTime: orderData.startTime,
             endTime: orderData.endTime,
             totalAmount: orderData.totalAmount,
+            razorpayOrderId: orderData.razorpayOrderId,
             status: "pending",
             paymentStatus: "pending",
         });
@@ -49,6 +51,27 @@ export class OrderService {
     }
 
     /**
+     * Get orders by user ID with pagination
+     */
+    async getOrdersByUserIdPaginated(
+        userId: Types.ObjectId,
+        page: number = 1,
+        limit: number = 10
+    ): Promise<{
+        orders: IOrder[];
+        pagination: {
+            page: number;
+            limit: number;
+            totalCount: number;
+            totalPages: number;
+            hasNext: boolean;
+            hasPrev: boolean;
+        };
+    }> {
+        return this.orderRepository.findByUserIdWithPagination(userId, page, limit);
+    }
+
+    /**
      * Update order status
      */
     async updateOrderStatus(
@@ -67,6 +90,26 @@ export class OrderService {
         paymentStatus: "pending" | "paid" | "refunded"
     ): Promise<IOrder | null> {
         const order = await this.orderRepository.update(orderId, { paymentStatus });
+        return order;
+    }
+
+    /**
+     * Confirm order after successful payment
+     */
+    async confirmOrder(
+        orderId: string,
+        paymentData: {
+            razorpayPaymentId: string;
+            razorpayOrderId: string;
+            razorpaySignature?: string;
+        }
+    ): Promise<IOrder | null> {
+        const order = await this.orderRepository.update(orderId, {
+            status: "confirmed",
+            paymentStatus: "paid",
+            razorpayPaymentId: paymentData.razorpayPaymentId,
+            razorpaySignature: paymentData.razorpaySignature,
+        });
         return order;
     }
 }

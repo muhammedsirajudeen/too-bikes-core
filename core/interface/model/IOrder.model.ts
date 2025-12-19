@@ -3,7 +3,7 @@ import { IVehicle } from "./IVehicle.model";
 import { IStore } from "./IStore.model";
 import IUser from "./IUser.model";
 
-export interface IOrder extends Document{
+export interface IOrder extends Document {
   _id: Types.ObjectId;
 
   user: Types.ObjectId | IUser;
@@ -16,12 +16,16 @@ export interface IOrder extends Document{
 
   totalAmount: number;
 
-  status: 
-    | "pending"
-    | "confirmed"
-    | "ongoing"
-    | "completed"
-    | "cancelled";
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
+
+  status:
+  | "pending"
+  | "confirmed"
+  | "ongoing"
+  | "completed"
+  | "cancelled";
 
   paymentStatus: "pending" | "paid" | "refunded";
 

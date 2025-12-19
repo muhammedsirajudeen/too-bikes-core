@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axiosInstance from "@/lib/axios";
 import { AxiosError } from "axios";
@@ -8,6 +8,7 @@ import { Calendar, MapPin, Phone, Clock, ArrowLeft, CheckCircle2, CreditCard, Ed
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import LicenseUploadModal from "@/components/LicenseUploadModal";
+import { useRazorpay } from "@/hooks/useRazorpay";
 
 interface VehicleData {
     _id: string;
@@ -57,8 +58,65 @@ function OrderReviewPage() {
     const [confirming, setConfirming] = useState<boolean>(false);
     const [orderConfirmed, setOrderConfirmed] = useState<boolean>(false);
     const [orderId, setOrderId] = useState<string>("");
+    const orderIdRef = useRef<string>(""); // Use ref to avoid closure issues
     const [isLicenseModalOpen, setIsLicenseModalOpen] = useState<boolean>(false);
     const [licenseUpdating, setLicenseUpdating] = useState<boolean>(false);
+
+    // Razorpay integration
+    const { isLoaded: razorpayLoaded, isLoading: razorpayProcessing, error: razorpayError, openPaymentModal } = useRazorpay({
+        onSuccess: async (response) => {
+            console.log("Payment successful!", response);
+
+            // Use ref to get the current orderId (avoids closure issues)
+            const currentOrderId = orderIdRef.current;
+
+            if (!currentOrderId) {
+                console.error("Order ID not found");
+                setError("Failed to confirm order. Order ID missing. Please contact support.");
+                setConfirming(false);
+                return;
+            }
+
+            // Send payment details to backend to confirm order
+            try {
+                console.log("Sending confirmation request for order:", currentOrderId);
+                const confirmResponse = await axiosInstance.post(`/api/v1/orders/${currentOrderId}/confirm`, {
+                    razorpayPaymentId: response.razorpay_payment_id,
+                    razorpayOrderId: response.razorpay_order_id,
+                    razorpaySignature: response.razorpay_signature,
+                });
+
+                console.log("Confirmation response:", confirmResponse.data);
+
+                if (confirmResponse.data.success) {
+                    console.log("Order confirmed successfully");
+                    setOrderId(currentOrderId); // Set the orderId for display
+                    setOrderConfirmed(true);
+                    setConfirming(false); // Reset confirming state
+                } else {
+                    console.error("Confirmation failed:", confirmResponse.data.message);
+                    setError(confirmResponse.data.message || "Failed to confirm order. Please contact support.");
+                    setConfirming(false);
+                }
+            } catch (err) {
+                const axiosError = err as AxiosError<{ message?: string }>;
+                console.error("Error confirming order:", err);
+                console.error("Error details:", axiosError.response?.data);
+                setError(axiosError.response?.data?.message || "Failed to confirm order. Please contact support.");
+                setConfirming(false);
+            }
+        },
+        onFailure: (error) => {
+            console.error("Payment failed:", error);
+            setError(`Payment failed: ${error.description || "Unknown error"}. Please try again.`);
+            setConfirming(false);
+        },
+        onDismiss: () => {
+            console.log("Payment modal dismissed");
+            setError("Payment was cancelled. Please complete payment to confirm your order.");
+            setConfirming(false);
+        },
+    });
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -128,10 +186,16 @@ function OrderReviewPage() {
             return;
         }
 
+        if (!razorpayLoaded) {
+            setError("Payment system is loading. Please wait a moment and try again.");
+            return;
+        }
+
         setConfirming(true);
         setError("");
 
         try {
+            // Create order first (this also creates Razorpay order on backend)
             const orderResponse = await axiosInstance.post("/api/v1/orders", {
                 vehicleId,
                 startTime,
@@ -139,11 +203,32 @@ function OrderReviewPage() {
                 totalAmount: parseFloat(totalAmount),
             });
 
-            if (orderResponse.data.success && orderResponse.data.data?.orderId) {
-                setOrderId(orderResponse.data.data.orderId);
-                setOrderConfirmed(true);
+            if (orderResponse.data.success && orderResponse.data.data?.orderId && orderResponse.data.data?.razorpayOrderId) {
+                const createdOrderId = orderResponse.data.data.orderId;
+                const razorpayOrderId = orderResponse.data.data.razorpayOrderId;
+                setOrderId(createdOrderId);
+                orderIdRef.current = createdOrderId; // Store in ref for callback access
+
+                // Open Razorpay payment modal with the Razorpay order ID
+                openPaymentModal({
+                    amount: parseFloat(totalAmount) * 100, // Convert to paise
+                    currency: "INR",
+                    name: "Too Bikes",
+                    description: `Bike Rental - ${vehicle?.brand} ${vehicle?.name}`,
+                    image: "/logo.png",
+                    orderId: razorpayOrderId, // Use Razorpay order ID from backend
+                    prefillName: user?.name,
+                    prefillEmail: user?.email,
+                    notes: {
+                        orderId: createdOrderId,
+                        vehicleId: vehicleId,
+                        vehicleName: `${vehicle?.brand} ${vehicle?.name}`,
+                    },
+                    themeColor: "#F4AA05",
+                });
             } else {
                 setError(orderResponse.data.message || "Failed to create order. Please try again.");
+                setConfirming(false);
             }
         } catch (err) {
             const axiosError = err as AxiosError<{ message?: string }>;
@@ -156,7 +241,6 @@ function OrderReviewPage() {
             }
 
             setError(errorMessage);
-        } finally {
             setConfirming(false);
         }
     };
@@ -268,7 +352,15 @@ function OrderReviewPage() {
                     {/* Action Buttons */}
                     <div className="space-y-3">
                         <Button
-                            onClick={() => router.push("/")}
+                            onClick={() => {
+                                // Restore saved query params when returning to home
+                                const savedParams = sessionStorage.getItem("homeQueryParams");
+                                if (savedParams) {
+                                    router.push(`/home?${savedParams}`);
+                                } else {
+                                    router.push("/home");
+                                }
+                            }}
                             className="w-full bg-[#F4AA05] hover:bg-[#cf9002] text-white font-semibold py-6 rounded-full shadow-md"
                         >
                             Back to Home
@@ -544,18 +636,29 @@ function OrderReviewPage() {
 
             {/* Confirm Button */}
             <div className="px-4 space-y-3">
+                {razorpayError && (
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
+                        <p className="text-red-600 dark:text-red-400 text-sm">{razorpayError}</p>
+                    </div>
+                )}
                 <Button
                     onClick={handleConfirmOrder}
-                    disabled={confirming}
+                    disabled={confirming || razorpayProcessing || !razorpayLoaded}
                     className="w-full bg-[#F4AA05] hover:bg-[#cf9002] text-white font-semibold py-6 rounded-full shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {confirming ? "Confirming Order..." : "Confirm Order"}
+                    {!razorpayLoaded
+                        ? "Loading Payment System..."
+                        : confirming
+                            ? "Creating Order..."
+                            : razorpayProcessing
+                                ? "Processing Payment..."
+                                : "Proceed to Payment"}
                 </Button>
                 <Button
                     onClick={() => router.back()}
                     variant="outline"
                     className="w-full py-6 rounded-full"
-                    disabled={confirming}
+                    disabled={confirming || razorpayProcessing}
                 >
                     Go Back
                 </Button>

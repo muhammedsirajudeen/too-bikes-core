@@ -31,4 +31,51 @@ export class OrderRepository extends BaseRepository<IOrder> {
       .sort({ createdAt: -1 })
       .exec();
   }
+
+  /**
+   * Find orders by user ID with pagination and populated references
+   */
+  async findByUserIdWithPagination(
+    userId: Types.ObjectId,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{
+    orders: IOrder[];
+    pagination: {
+      page: number;
+      limit: number;
+      totalCount: number;
+      totalPages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
+  }> {
+    const skip = (page - 1) * limit;
+
+    const [orders, totalCount] = await Promise.all([
+      this.model
+        .find({ user: userId })
+        .populate("vehicle", "name brand image fuelType pricePerDay pricePerHour")
+        .populate("store", "name address")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.model.countDocuments({ user: userId }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      orders,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
+  }
 }

@@ -1,109 +1,98 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useParams } from "next/navigation";
 import axiosInstance from "@/lib/axios";
 import { AxiosError } from "axios";
-import { CheckCircle2, Calendar, MapPin, Phone, Clock, ArrowLeft, Home } from "lucide-react";
+import { Calendar, MapPin, Phone, Clock, ArrowLeft, CreditCard, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
-interface OrderConfirmationPageProps {
-    params: Promise<{ orderId: string }>;
+interface VehicleData {
+    _id: string;
+    name: string;
+    brand: string;
+    image?: string[];
+    fuelType: string;
+    pricePerDay: number;
+    pricePerHour: number;
+}
+
+interface StoreData {
+    _id: string;
+    name: string;
+    address: string;
+    contactNumber?: string;
+    openingTime: string;
+    closingTime: string;
+}
+
+interface UserData {
+    _id: string;
+    name?: string;
+    phoneNumber: string;
+    email?: string;
 }
 
 interface OrderData {
     _id: string;
-    status: string;
-    paymentStatus: string;
+    status: "pending" | "confirmed" | "ongoing" | "completed" | "cancelled";
+    paymentStatus: "pending" | "paid" | "refunded";
     totalAmount: number;
     startTime: string;
     endTime: string;
     createdAt?: string;
-    vehicle: {
-        _id: string;
-        name: string;
-        brand: string;
-        image?: string[];
-        fuelType: string;
-        pricePerDay: number;
-        pricePerHour: number;
-    };
-    store: {
-        _id: string;
-        name: string;
-        address: string;
-        contactNumber?: string;
-        openingTime: string;
-        closingTime: string;
-    };
-    user: {
-        _id: string;
-        name?: string;
-        phoneNumber: string;
-        email?: string;
-    };
+    vehicle: VehicleData;
+    store: StoreData;
+    user: UserData;
 }
 
-export default function OrderConfirmationPage({ params }: OrderConfirmationPageProps) {
-    const { orderId } = use(params);
+function OrderDetailsPage() {
     const router = useRouter();
+    const params = useParams();
+    const orderId = params.orderId as string;
 
     const [order, setOrder] = useState<OrderData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>("");
 
     useEffect(() => {
-        const fetchOrderDetails = async () => {
-            if (!orderId) {
-                setError("Order ID is required");
-                setLoading(false);
-                return;
-            }
-
-            setLoading(true);
-            setError("");
-
-            try {
-                const response = await axiosInstance.get(`/api/v1/orders/${orderId}`);
-
-                if (!response.data.success) {
-                    setError(response.data.message || "Failed to fetch order details");
-                    setOrder(null);
-                    setLoading(false);
-                    return;
-                }
-
-                setOrder(response.data.data.order);
-                setError("");
-            } catch (err) {
-                const axiosError = err as AxiosError<{ message?: string }>;
-                let errorMessage = "An error occurred while fetching order details.";
-
-                if (axiosError.response) {
-                    const status = axiosError.response.status;
-                    const errorData = axiosError.response.data;
-
-                    if (errorData?.message) {
-                        errorMessage = errorData.message;
-                    } else if (status === 404) {
-                        errorMessage = "Order not found.";
-                    } else if (status >= 500) {
-                        errorMessage = `Server error (${status}). Please try again later.`;
-                    }
-                } else if (axiosError.request) {
-                    errorMessage = "Network error. Please check your connection.";
-                }
-
-                setError(errorMessage);
-                setOrder(null);
-            } finally {
-                setLoading(false);
-            }
-        };
+        if (!orderId) {
+            setError("Order ID is missing");
+            setLoading(false);
+            return;
+        }
 
         fetchOrderDetails();
     }, [orderId]);
+
+    const fetchOrderDetails = async () => {
+        try {
+            setLoading(true);
+            setError("");
+
+            const response = await axiosInstance.get(`/api/v1/orders/${orderId}`);
+
+            if (response.data.success && response.data.data?.order) {
+                setOrder(response.data.data.order);
+            } else {
+                setError(response.data.message || "Failed to load order details.");
+            }
+        } catch (err) {
+            const axiosError = err as AxiosError<{ message?: string }>;
+            let errorMessage = "An error occurred while loading order details.";
+
+            if (axiosError.response?.data?.message) {
+                errorMessage = axiosError.response.data.message;
+            } else if (axiosError.request) {
+                errorMessage = "Network error. Please check your connection.";
+            }
+
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -126,17 +115,30 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
     const getStatusColor = (status: string) => {
         switch (status) {
             case "confirmed":
-                return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-            case "pending":
-                return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+                return "from-green-500 to-emerald-600";
             case "ongoing":
-                return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
+                return "from-blue-500 to-indigo-600";
             case "completed":
-                return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
+                return "from-gray-500 to-gray-600";
             case "cancelled":
-                return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+                return "from-red-500 to-rose-600";
             default:
-                return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
+                return "from-yellow-500 to-orange-600";
+        }
+    };
+
+    const getStatusText = (status: string) => {
+        switch (status) {
+            case "confirmed":
+                return "Order Confirmed";
+            case "ongoing":
+                return "Ride Ongoing";
+            case "completed":
+                return "Ride Completed";
+            case "cancelled":
+                return "Order Cancelled";
+            default:
+                return "Payment Pending";
         }
     };
 
@@ -169,17 +171,10 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                             {error || "Order not found"}
                         </p>
                         <Button
-                            onClick={() => {
-                                const savedParams = sessionStorage.getItem("homeQueryParams");
-                                if (savedParams) {
-                                    router.push(`/home?${savedParams}`);
-                                } else {
-                                    router.push("/home");
-                                }
-                            }}
+                            onClick={() => router.push("/orders")}
                             className="bg-red-600 hover:bg-red-700 text-white"
                         >
-                            Go to Home
+                            Back to Orders
                         </Button>
                     </div>
                 </div>
@@ -192,60 +187,27 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
             {/* Header */}
             <div className="px-4 pt-6 pb-4">
                 <button
-                    onClick={() => {
-                        const savedParams = sessionStorage.getItem("homeQueryParams");
-                        if (savedParams) {
-                            router.push(`/home?${savedParams}`);
-                        } else {
-                            router.push("/home");
-                        }
-                    }}
+                    onClick={() => router.push("/orders")}
                     className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-4"
                 >
                     <ArrowLeft className="w-5 h-5" />
-                    <span>Back to Home</span>
+                    <span>Back to Orders</span>
                 </button>
             </div>
 
-            {/* Success Banner */}
+            {/* Status Header */}
             <div className="px-4 mb-6">
-                <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
+                <div className={`bg-gradient-to-r ${getStatusColor(order.status)} rounded-2xl p-6 text-white shadow-lg`}>
                     <div className="flex items-center gap-3 mb-2">
-                        <CheckCircle2 className="w-8 h-8" />
-                        <h1 className="text-2xl font-bold">Booking Confirmed!</h1>
+                        <Package className="w-8 h-8" />
+                        <h1 className="text-2xl font-bold">{getStatusText(order.status)}</h1>
                     </div>
-                    <p className="text-green-50 text-sm">
-                        Your order has been successfully placed
+                    <p className="text-white/90 text-sm">
+                        Order placed on {order.createdAt ? formatDate(order.createdAt) : "N/A"}
                     </p>
-                    <p className="text-green-50 text-xs mt-2 font-mono">
+                    <p className="text-white/80 text-xs mt-2 font-mono">
                         Order ID: {order._id}
                     </p>
-                </div>
-            </div>
-
-            {/* Order Status */}
-            <div className="px-4 mb-6">
-                <div className="bg-white dark:bg-[#191B27] rounded-2xl p-4 shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Status</span>
-                        <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                                order.status
-                            )}`}
-                        >
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                        </span>
-                    </div>
-                    <div className="flex items-center justify-between mt-3">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Payment</span>
-                        <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                                order.paymentStatus
-                            )}`}
-                        >
-                            {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
-                        </span>
-                    </div>
                 </div>
             </div>
 
@@ -359,12 +321,26 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                 </div>
             </div>
 
-            {/* Price Summary */}
+            {/* Payment Details */}
             <div className="px-4 mb-6">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-                    Price Summary
+                    Payment Details
                 </h2>
                 <div className="bg-white dark:bg-[#191B27] rounded-2xl p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                        <CreditCard className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Payment Status
+                        </span>
+                    </div>
+                    <div className="flex items-center justify-between py-2">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                            Status
+                        </span>
+                        <span className={`text-sm font-semibold capitalize ${order.paymentStatus === "paid" ? "text-green-600 dark:text-green-400" : order.paymentStatus === "refunded" ? "text-blue-600 dark:text-blue-400" : "text-yellow-600 dark:text-yellow-400"}`}>
+                            {order.paymentStatus}
+                        </span>
+                    </div>
                     <div className="flex items-center justify-between py-3 border-t border-gray-200 dark:border-gray-700">
                         <span className="text-lg font-bold text-gray-900 dark:text-white">
                             Total Amount
@@ -376,23 +352,35 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                 </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="px-4 space-y-3">
+            {/* Action Button */}
+            <div className="px-4">
                 <Button
-                    onClick={() => {
-                        const savedParams = sessionStorage.getItem("homeQueryParams");
-                        if (savedParams) {
-                            router.push(`/home?${savedParams}`);
-                        } else {
-                            router.push("/home");
-                        }
-                    }}
-                    className="w-full bg-[#F4AA05] hover:bg-[#cf9002] text-white font-semibold py-6 rounded-full shadow-md"
+                    onClick={() => router.push("/orders")}
+                    variant="outline"
+                    className="w-full py-6 rounded-full"
                 >
-                    <Home className="w-5 h-5 mr-2" />
-                    Back to Home
+                    Back to All Orders
                 </Button>
             </div>
         </div>
+    );
+}
+
+// Wrap with Suspense for Next.js 15 compatibility
+export default function OrderDetailsPageWrapper() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gray-50 dark:bg-[#0B0A1B] pb-24 max-w-[430px] mx-auto">
+                <div className="px-4 pt-8">
+                    <div className="animate-pulse space-y-6">
+                        <div className="h-24 bg-gray-200 dark:bg-gray-800 rounded-2xl"></div>
+                        <div className="h-48 bg-gray-200 dark:bg-gray-800 rounded-2xl"></div>
+                        <div className="h-32 bg-gray-200 dark:bg-gray-800 rounded-2xl"></div>
+                    </div>
+                </div>
+            </div>
+        }>
+            <OrderDetailsPage />
+        </Suspense>
     );
 }

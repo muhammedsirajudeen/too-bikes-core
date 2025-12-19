@@ -55,10 +55,14 @@ export default function Navbar() {
         <p className="text-xs mt-1">Favorite</p>
       </button>
 
-      <div className="flex flex-col items-center text-gray-400">
+      <button
+        onClick={() => requireAuth("/orders")}
+        className={`flex flex-col items-center transition-colors ${pathname === "/orders" ? "text-[#FF6B00]" : "text-gray-400 hover:text-[#FF6B00]"
+          }`}
+      >
         <History className="w-6 h-6" />
         <p className="text-xs mt-1">Order History</p>
-      </div>
+      </button>
 
       <button
         onClick={() => {

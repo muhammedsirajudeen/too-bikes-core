@@ -12,10 +12,14 @@ const orderSchema = new Schema<IOrder>(
 
     totalAmount: { type: Number, required: true },
 
-    status: { 
-      type: String, 
+    razorpayOrderId: { type: String },
+    razorpayPaymentId: { type: String },
+    razorpaySignature: { type: String },
+
+    status: {
+      type: String,
       enum: ["pending", "confirmed", "ongoing", "completed", "cancelled"],
-      default: "pending" 
+      default: "pending"
     },
 
     paymentStatus: {

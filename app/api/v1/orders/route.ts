@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Types } from "mongoose";
 import { verifyAccessToken } from "@/utils/jwt.utils";
+import Razorpay from "razorpay";
 
 // Schema for order creation
 const createOrderSchema = z.object({
@@ -20,12 +21,19 @@ export interface CreateOrderResponse {
     message: string;
     data?: {
         orderId: string;
+        razorpayOrderId: string;
     };
     error?: Array<{ message?: string; path?: string[] }>;
 }
 
 const orderService = new OrderService();
 const vehicleRepository = new VehicleRepository();
+
+// Initialize Razorpay instance
+const razorpay = new Razorpay({
+    key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY!,
+    key_secret: process.env.RAZORPAY_SECRET!,
+});
 
 export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => {
     // Extract and verify JWT token
@@ -96,6 +104,18 @@ export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => 
 
     // Create order
     try {
+        // Create Razorpay order first
+        const razorpayOrder = await razorpay.orders.create({
+            amount: Math.round(totalAmount * 100), // Convert to paise
+            currency: "INR",
+            receipt: `rcpt_${Date.now()}_${decoded.id.substring(0, 8)}`, // Max 40 chars
+            notes: {
+                userId: decoded.id,
+                vehicleId: vehicleId,
+            },
+        });
+
+        // Create order in database with Razorpay order ID
         const order = await orderService.createOrder({
             userId: new Types.ObjectId(decoded.id),
             vehicleId: new Types.ObjectId(vehicleId),
@@ -103,6 +123,7 @@ export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => 
             startTime: new Date(startTime),
             endTime: new Date(endTime),
             totalAmount,
+            razorpayOrderId: razorpayOrder.id,
         });
 
         return NextResponse.json(
@@ -111,6 +132,7 @@ export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => 
                 message: "Order created successfully",
                 data: {
                     orderId: order._id.toString(),
+                    razorpayOrderId: razorpayOrder.id,
                 },
             },
             { status: HttpStatus.CREATED }
