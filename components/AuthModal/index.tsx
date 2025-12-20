@@ -40,6 +40,7 @@ declare global {
             onSuccess: (data: MSG91SuccessData) => void,
             onError: (error: MSG91ErrorData) => void
         ) => void;
+        showCaptcha: () => void;
     }
 }
 
@@ -140,6 +141,14 @@ export default function AuthModal({
             // MSG91 requires country code without + sign
             const identifierWithCountryCode = `91${phoneNumber}`;
             console.log('Sending OTP to:', identifierWithCountryCode);
+
+            // Automatically trigger CAPTCHA before sending OTP
+            if (typeof window.showCaptcha === 'function') {
+                console.log('Triggering CAPTCHA automatically...');
+                window.showCaptcha();
+            } else {
+                console.warn('showCaptcha method not available, proceeding without CAPTCHA trigger');
+            }
 
             window.sendOtp(
                 identifierWithCountryCode, // Must include country code (91 for India)

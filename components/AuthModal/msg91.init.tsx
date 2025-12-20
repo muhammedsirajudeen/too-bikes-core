@@ -25,6 +25,7 @@ declare global {
     interface Window {
         configuration: MSG91Configuration;
         initSendOTP: (config: MSG91Configuration) => void;
+        showCaptcha: () => void;
     }
 }
 
