@@ -1,7 +1,7 @@
 import { IOrder } from "../core/interface/model/IOrder.model";
 import { BaseRepository } from "./base.respository";
 import { OrderModel } from "@/model/orders.model";
-import { Types } from "mongoose";
+import { ClientSession, Types } from "mongoose";
 
 export class OrderRepository extends BaseRepository<IOrder> {
   constructor() {
@@ -78,4 +78,12 @@ export class OrderRepository extends BaseRepository<IOrder> {
       },
     };
   }
+
+
+  async create(data: Partial<IOrder>, session?: ClientSession): Promise<IOrder> {
+    const doc = new this.model(data);
+    await doc.save({ session });
+    return doc;
+  }
+
 }

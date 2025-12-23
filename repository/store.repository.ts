@@ -79,4 +79,45 @@ export class StoreRepository extends BaseRepository<IStore> {
   async findAllStores(): Promise<IStore[]> {
     return await this.model.find({}).sort({ name: 1 });
   }
+
+  /**
+   * Get all stores sorted by distance from given coordinates
+   * Returns all stores unsorted if coordinates are invalid or not provided
+   */
+  async findAllStoresSortedByDistance(
+    longitude?: number,
+    latitude?: number
+  ): Promise<IStore[]> {
+    // If no coordinates provided, return all stores unsorted
+    if (!longitude || !latitude) {
+      return await this.findAllStores();
+    }
+
+    // Validate India bounds
+    const isValidIndiaCoords =
+      latitude >= 8.0 && latitude <= 37.0 &&
+      longitude >= 68.0 && longitude <= 97.5;
+
+    if (!isValidIndiaCoords) {
+      // Return all stores unsorted if coordinates are invalid
+      return await this.findAllStores();
+    }
+
+    try {
+      console.log('[findAllStoresSortedByDistance] Querying with coords:', { longitude, latitude });
+      const stores = await this.model.find({
+        "location.coordinates": {
+          $nearSphere: {
+            $geometry: { type: "Point", coordinates: [longitude, latitude] }
+          }
+        }
+      });
+      console.log('[findAllStoresSortedByDistance] Found stores:', stores.map(s => ({ name: s.name, id: s._id })));
+      return stores;
+    } catch (error) {
+      // Fallback to unsorted if geospatial query fails
+      console.error('Geospatial query failed:', error);
+      return await this.findAllStores();
+    }
+  }
 }

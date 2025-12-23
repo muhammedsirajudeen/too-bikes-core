@@ -6,27 +6,27 @@ import { z } from "zod";
 
 const storeRepo = new StoreRepository();
 
-// Schema for nearest store query
-const nearestStoreSchema = z.object({
+// Schema for location-based store sorting
+const locationSchema = z.object({
     latitude: z.string().transform(Number).pipe(z.number().min(-90).max(90)),
     longitude: z.string().transform(Number).pipe(z.number().min(-180).max(180)),
 });
 
 /**
  * GET /api/v1/stores
- * Returns all stores
+ * Returns all stores, optionally sorted by distance from given coordinates
  */
 export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
     const { searchParams } = new URL(request.url);
 
-    // Check if this is a nearest store query
+    // Check if this is a location-based sorting query
     if (searchParams.has('latitude') && searchParams.has('longitude')) {
         const params = {
             latitude: searchParams.get('latitude'),
             longitude: searchParams.get('longitude'),
         };
 
-        const validated = nearestStoreSchema.safeParse(params);
+        const validated = locationSchema.safeParse(params);
 
         if (!validated.success) {
             return NextResponse.json({
@@ -36,27 +36,20 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
             }, { status: HttpStatus.BAD_REQUEST });
         }
 
-        const nearestStore = await storeRepo.findNearestStore(
+        // Get all stores sorted by distance from the provided coordinates
+        const stores = await storeRepo.findAllStoresSortedByDistance(
             validated.data.longitude,
             validated.data.latitude
         );
 
-        if (!nearestStore) {
-            return NextResponse.json({
-                success: false,
-                message: "No stores found",
-                data: null
-            }, { status: HttpStatus.NOT_FOUND });
-        }
-
         return NextResponse.json({
             success: true,
-            message: "Nearest store retrieved successfully",
-            data: nearestStore
+            message: "Stores retrieved successfully (sorted by distance)",
+            data: stores
         }, { status: HttpStatus.OK });
     }
 
-    // Otherwise, return all stores
+    // Otherwise, return all stores unsorted
     const stores = await storeRepo.findAllStores();
 
     return NextResponse.json({

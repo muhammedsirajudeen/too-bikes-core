@@ -2,7 +2,7 @@ import { IVehicle } from "../core/interface/model/IVehicle.model";
 import { IStore } from "../core/interface/model/IStore.model";
 import { BaseRepository } from "./base.respository";
 import { VehicleModel } from "@/model/vehicles.model";
-import { Types } from "mongoose";
+import { ClientSession, Types } from "mongoose";
 
 export class VehicleRepository extends BaseRepository<IVehicle> {
   constructor() {
@@ -69,5 +69,9 @@ export class VehicleRepository extends BaseRepository<IVehicle> {
       .populate("store")
       .exec();
   }
+
+  async updateAvailability(vehicleId: Types.ObjectId | string, availability: Types.ObjectId, session: ClientSession): Promise<IVehicle | null> {
+    return VehicleModel.findByIdAndUpdate(vehicleId, { availability }, { new: true }).session(session).exec();
+  } 
 
 }

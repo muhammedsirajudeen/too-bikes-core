@@ -1,5 +1,6 @@
 import { Document, Types } from "mongoose";
 import { IStore } from "./IStore.model";
+import { IReservation } from "@/model/reservation.model";
 
 export interface IVehicle extends Document {
   _id: Types.ObjectId;
@@ -23,7 +24,7 @@ export interface IVehicle extends Document {
 
   image?: string[];
 
-  availability: boolean;
+  availability: Types.ObjectId | IReservation;
 
   isActive: boolean;
 

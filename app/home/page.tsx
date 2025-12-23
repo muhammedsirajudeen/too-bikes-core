@@ -61,7 +61,9 @@ function HomePageContentInner() {
     // Store state
     const [allStores, setAllStores] = useState<IStore[]>([]);
     const [selectedStore, setSelectedStore] = useState<IStore | null>(null);
-    const [storesLoading, setStoresLoading] = useState<boolean>(true);
+    const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+    const [userSelectedStore, setUserSelectedStore] = useState<boolean>(false); // Track if user manually selected a store
+    const [locationChecked, setLocationChecked] = useState<boolean>(false); // Track if geolocation check is complete
 
     // Filter state (for editing)
     const [pickupDate, setPickupDate] = useState<Date | null>(null);
@@ -100,28 +102,40 @@ function HomePageContentInner() {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>("");
 
-    // Fetch all stores on mount
+    // Get user location on mount (stores will be fetched with vehicles)
     useEffect(() => {
-        const fetchStores = async () => {
-            try {
-                const response = await axiosInstance.get<{ success: boolean; data: IStore[] }>('/api/v1/stores');
-                if (response.data.success) {
-                    setAllStores(response.data.data);
+        if (navigator.geolocation) {
+            // Set a timeout to prevent waiting forever
+            const timeout = setTimeout(() => {
+                setLocationChecked(true);
+            }, 3000); // 3 second timeout
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    clearTimeout(timeout);
+                    setUserLocation({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    });
+                    setLocationChecked(true);
+                },
+                (error) => {
+                    clearTimeout(timeout);
+                    console.log("Location access denied:", error.message);
+                    setLocationChecked(true);
+                    // Continue without location - stores will be unsorted
                 }
-            } catch (err) {
-                console.error("Failed to fetch stores:", err);
-            } finally {
-                setStoresLoading(false);
-            }
-        };
-        fetchStores();
+            );
+        } else {
+            // Geolocation not supported
+            setLocationChecked(true);
+        }
     }, []);
 
-    // Initialize from URL params and find nearest store
+    // Initialize from URL params
     useEffect(() => {
         const startTimeParam = searchParams.get("startTime");
         const endTimeParam = searchParams.get("endTime");
-        const storeIdParam = searchParams.get("storeId");
         const pageParam = searchParams.get("page");
 
         if (startTimeParam && endTimeParam) {
@@ -140,65 +154,11 @@ function HomePageContentInner() {
             setError("Missing required parameters. Please start from the landing page.");
             setLoading(false);
         }
-
-        // Handle store selection: prioritize geolocation when no storeId in URL
-        if (!storeIdParam && allStores.length > 0 && !storesLoading && !selectedStore) {
-            // No storeId in URL - auto-select nearest store based on user location
-            findNearestStore();
-        } else if (storeIdParam && allStores.length > 0) {
-            // storeId in URL - use the specified store
-            const store = allStores.find(s => s._id.toString() === storeIdParam);
-            if (store) {
-                setSelectedStore(store);
-            } else {
-                // Invalid storeId - fallback to nearest store
-                findNearestStore();
-            }
-        }
-    }, [searchParams, allStores, storesLoading, selectedStore]);
-
-    // Find nearest store based on user's geolocation
-    const findNearestStore = async () => {
-        if (!navigator.geolocation) {
-            // Fallback to first store if geolocation not available
-            if (allStores.length > 0) {
-                setSelectedStore(allStores[0]);
-            }
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                try {
-                    const response = await axiosInstance.get<{ success: boolean; data: IStore }>(
-                        `/api/v1/stores?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}`
-                    );
-                    if (response.data.success && response.data.data) {
-                        setSelectedStore(response.data.data);
-                    } else if (allStores.length > 0) {
-                        setSelectedStore(allStores[0]);
-                    }
-                } catch (err) {
-                    console.error("Failed to find nearest store:", err);
-                    // Fallback to first store
-                    if (allStores.length > 0) {
-                        setSelectedStore(allStores[0]);
-                    }
-                }
-            },
-            (error) => {
-                console.error("Geolocation error:", error);
-                // Fallback to first store
-                if (allStores.length > 0) {
-                    setSelectedStore(allStores[0]);
-                }
-            }
-        );
-    };
+    }, [searchParams]);
 
     // Fetch vehicles using axios with proper error handling
     const fetchVehicles = useCallback(async () => {
-        if (!startTime || !endTime || !selectedStore) {
+        if (!startTime || !endTime || !locationChecked) {
             return;
         }
 
@@ -206,13 +166,24 @@ function HomePageContentInner() {
         setError("");
 
         try {
-            const params = {
+            const params: Record<string, string> = {
                 startTime,
                 endTime,
-                storeId: selectedStore._id.toString(),
                 page: currentPage.toString(),
                 limit: limit.toString(),
             };
+
+            // Only add storeId if user manually selected a store
+            // On initial load, let backend choose nearest store based on location
+            if (userSelectedStore && selectedStore) {
+                params.storeId = selectedStore._id.toString();
+            }
+
+            // Add location parameters if available
+            if (userLocation) {
+                params.latitude = userLocation.latitude.toString();
+                params.longitude = userLocation.longitude.toString();
+            }
 
             const response = await axiosInstance.get<VehicleResponse>('/api/v1/available-vehicles', {
                 params,
@@ -246,6 +217,18 @@ function HomePageContentInner() {
 
             setVehicles(data.data);
             setPagination(data.metadata?.pagination || null);
+            
+            // Update stores list from response
+            if (data.metadata?.stores && Array.isArray(data.metadata.stores)) {
+                setAllStores(data.metadata.stores);
+                
+                // Only set selected store on initial load (when user hasn't manually selected)
+                // This prevents infinite loop from re-triggering fetchVehicles
+                if (!userSelectedStore && !selectedStore && data.metadata.store) {
+                    setSelectedStore(data.metadata.store);
+                }
+            }
+            
             setError(""); // Clear any previous errors
         } catch (err) {
             // Handle axios errors
@@ -296,8 +279,9 @@ function HomePageContentInner() {
         } finally {
             setLoading(false);
         }
-    }, [startTime, endTime, selectedStore, currentPage]);
+    }, [startTime, endTime, userSelectedStore, selectedStore, currentPage, userLocation, locationChecked]);
 
+    // Trigger fetch when dependencies change
     useEffect(() => {
         fetchVehicles();
     }, [fetchVehicles]);
@@ -366,10 +350,6 @@ function HomePageContentInner() {
         return filtered;
     }, [vehicles, priceRange, bikeTypes, fuelType, selectedBrands, sortBy]);
 
-    useEffect(() => {
-        fetchVehicles();
-    }, [fetchVehicles]);
-
     const updateFilters = () => {
         if (!pickupDate || !pickupTime || !dropoffDate || !dropoffTime) {
             return;
@@ -394,22 +374,30 @@ function HomePageContentInner() {
         setCurrentPage(1); // Reset to first page when filters change
 
         // Update URL for bookmarking/sharing (without triggering navigation)
+        const params = new URLSearchParams({
+            startTime: pickupDateTime.toISOString(),
+            endTime: dropoffDateTime.toISOString(),
+            page: "1",
+            limit: limit.toString(),
+        });
+        
         if (selectedStore) {
-            const params = new URLSearchParams({
-                startTime: pickupDateTime.toISOString(),
-                endTime: dropoffDateTime.toISOString(),
-                storeId: selectedStore._id.toString(),
-                page: "1",
-                limit: limit.toString(),
-            });
-            window.history.replaceState({}, '', `/home?${params.toString()}`);
+            params.set('storeId', selectedStore._id.toString());
         }
+        
+        if (userLocation) {
+            params.set('latitude', userLocation.latitude.toString());
+            params.set('longitude', userLocation.longitude.toString());
+        }
+        
+        window.history.replaceState({}, '', `/home?${params.toString()}`);
 
         setShowFilters(false);
     };
 
     const handleStoreSelect = (store: IStore) => {
         setSelectedStore(store);
+        setUserSelectedStore(true); // Mark that user manually selected a store
         setCurrentPage(1); // Reset to first page when store changes
 
         // Update URL for bookmarking/sharing
@@ -420,6 +408,12 @@ function HomePageContentInner() {
             page: "1",
             limit: limit.toString(),
         });
+        
+        if (userLocation) {
+            params.set('latitude', userLocation.latitude.toString());
+            params.set('longitude', userLocation.longitude.toString());
+        }
+        
         window.history.replaceState({}, '', `/home?${params.toString()}`);
     };
 
@@ -428,16 +422,23 @@ function HomePageContentInner() {
         setCurrentPage(newPage);
 
         // Update URL for bookmarking/sharing (without triggering navigation)
+        const params = new URLSearchParams({
+            startTime,
+            endTime,
+            page: newPage.toString(),
+            limit: limit.toString(),
+        });
+        
         if (selectedStore) {
-            const params = new URLSearchParams({
-                startTime,
-                endTime,
-                storeId: selectedStore._id.toString(),
-                page: newPage.toString(),
-                limit: limit.toString(),
-            });
-            window.history.replaceState({}, '', `/home?${params.toString()}`);
+            params.set('storeId', selectedStore._id.toString());
         }
+        
+        if (userLocation) {
+            params.set('latitude', userLocation.latitude.toString());
+            params.set('longitude', userLocation.longitude.toString());
+        }
+        
+        window.history.replaceState({}, '', `/home?${params.toString()}`);
     };
 
 
@@ -514,7 +515,7 @@ function HomePageContentInner() {
                             allStores={allStores}
                             selectedStore={selectedStore}
                             onStoreSelect={handleStoreSelect}
-                            storesLoading={storesLoading}
+                            storesLoading={loading}
                             startTime={startTime}
                             endTime={endTime}
                             onFilterClick={() => setShowFilters(true)}
@@ -566,7 +567,7 @@ function HomePageContentInner() {
                                         stores={allStores}
                                         selectedStore={selectedStore}
                                         onStoreSelect={handleStoreSelect}
-                                        loading={storesLoading}
+                                        loading={loading}
                                     />
                                 </div>
                                 <button

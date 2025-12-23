@@ -22,7 +22,7 @@ const vehicleSchema = new Schema<IVehicle>(
 
     image: [{ type: String }],
 
-    availability: { type: Boolean, default: true },
+    availability: { type: Schema.Types.ObjectId, ref: "Reservation" },
 
     isActive: { type: Boolean, default: true }
   },

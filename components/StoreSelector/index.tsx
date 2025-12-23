@@ -27,7 +27,7 @@ interface StoreSelectorProps {
 }
 
 export function StoreSelector({
-    stores,
+    stores = [],
     selectedStore,
     onStoreSelect,
     loading = false,
@@ -59,7 +59,7 @@ export function StoreSelector({
                     <CommandList>
                         <CommandEmpty>No store found.</CommandEmpty>
                         <CommandGroup>
-                            {stores.map((store) => (
+                            {Array.isArray(stores) && stores.map((store) => (
                                 <CommandItem
                                     key={store._id.toString()}
                                     value={`${store.name} ${store.address} ${store.district}`}
