@@ -1,6 +1,7 @@
 import { HttpStatus } from "@/constants/status.constant";
 import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
 import { OrderService } from "@/services/server/order.service";
+import { ReservationRepository } from "@/repository/reservation.repository";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyAccessToken } from "@/utils/jwt.utils";
@@ -25,6 +26,7 @@ export interface ConfirmOrderResponse {
 }
 
 const orderService = new OrderService();
+const reservationRepository = new ReservationRepository();
 
 export const POST = withLoggingAndErrorHandling(
     async (
@@ -152,6 +154,16 @@ export const POST = withLoggingAndErrorHandling(
                     },
                     { status: HttpStatus.INTERNAL_SERVER_ERROR }
                 );
+            }
+
+            // Update reservation status to confirmed as well
+            // This is required as we are now creating reservations along with orders
+            try {
+                await reservationRepository.confirmReservationByRazorpayOrderId(razorpayOrderId);
+            } catch (resError) {
+                console.error("Warning: Failed to confirm reservation after order confirmation", resError);
+                // We don't fail the request here as the user has paid and order is confirmed.
+                // Reconciliation will handle this or manual support.
             }
 
             return NextResponse.json(

@@ -1,12 +1,11 @@
 import { HttpStatus } from "@/constants/status.constant";
 import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
-import { OrderService } from "@/services/server/order.service";
+import { Order2Service } from "@/services/server/order2.service";
 import { VehicleRepository } from "@/repository/vehicle.repository";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { Types } from "mongoose";
 import { verifyAccessToken } from "@/utils/jwt.utils";
-import Razorpay from "razorpay";
+import { Types } from "mongoose";
 
 // Schema for order creation
 const createOrderSchema = z.object({
@@ -26,14 +25,8 @@ export interface CreateOrderResponse {
     error?: Array<{ message?: string; path?: string[] }>;
 }
 
-const orderService = new OrderService();
+const order2Service = new Order2Service();
 const vehicleRepository = new VehicleRepository();
-
-// Initialize Razorpay instance
-const razorpay = new Razorpay({
-    key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY!,
-    key_secret: process.env.RAZORPAY_SECRET!,
-});
 
 export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => {
     // Extract and verify JWT token
@@ -79,6 +72,7 @@ export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => 
     const { vehicleId, startTime, endTime, totalAmount } = validated.data;
 
     // Fetch vehicle to get store ID
+    // Note: order2Service requires storeId.
     const vehicle = await vehicleRepository.findById(new Types.ObjectId(vehicleId));
 
     if (!vehicle) {
@@ -102,49 +96,51 @@ export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => 
         );
     }
 
-    // Create order
+    // Attempt booking using the new robust service
     try {
-        // Create Razorpay order first
-        const razorpayOrder = await razorpay.orders.create({
-            amount: Math.round(totalAmount * 100), // Convert to paise
-            currency: "INR",
-            receipt: `rcpt_${Date.now()}_${decoded.id.substring(0, 8)}`, // Max 40 chars
-            notes: {
-                userId: decoded.id,
-                vehicleId: vehicleId,
-            },
-        });
-
-        // Create order in database with Razorpay order ID
-        const order = await orderService.createOrder({
-            userId: new Types.ObjectId(decoded.id),
-            vehicleId: new Types.ObjectId(vehicleId),
-            storeId: vehicle.store as Types.ObjectId,
-            startTime: new Date(startTime),
-            endTime: new Date(endTime),
+        const bookingResult = await order2Service.attemptBooking(
+            vehicleId,
+            new Date(startTime),
+            new Date(endTime),
+            decoded.id,
             totalAmount,
-            razorpayOrderId: razorpayOrder.id,
-        });
+            vehicle.store.toString()
+        );
 
         return NextResponse.json(
             {
                 success: true,
                 message: "Order created successfully",
                 data: {
-                    orderId: order._id.toString(),
-                    razorpayOrderId: razorpayOrder.id,
+                    orderId: bookingResult.orderId.toString(),
+                    razorpayOrderId: bookingResult.razorpayOrderId,
+                    // Additional data available if needed: reservationId, etc.
                 },
             },
             { status: HttpStatus.CREATED }
         );
-    } catch (error) {
+    } catch (error: unknown) {
         console.error("Error creating order:", error);
+
+        let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+        let message = "Failed to create order";
+
+        if (error instanceof Error) {
+            if (error.message === 'Vehicle not available in this time slot') {
+                statusCode = HttpStatus.CONFLICT;
+                message = error.message;
+            } else if (
+                error.message === 'Booking failed after multiple retries due to high contention'
+            ) {
+                statusCode = HttpStatus.SERVICE_UNAVAILABLE;
+                message = "High demand for this vehicle. Please try again.";
+            }
+        }
+
         return NextResponse.json(
-            {
-                success: false,
-                message: "Failed to create order",
-            },
-            { status: HttpStatus.INTERNAL_SERVER_ERROR }
+            { success: false, message },
+            { status: statusCode }
         );
     }
+
 });

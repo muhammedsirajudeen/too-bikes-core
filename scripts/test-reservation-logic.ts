@@ -384,7 +384,7 @@ const mockRazorpay = {
 
 async function runTests() {
   console.log('Connecting to Atlas...');
-  const uri = 'mongodb+srv://ciltriq:e1bYJ6QfPSFvF4bF@ciltriq.laxlq52.mongodb.net/tooBikesTest';
+  const uri = 'gave your atlas url';
 
   if (mongoose.connection.readyState === 0) {
     await mongoose.connect(uri, {
@@ -397,11 +397,11 @@ async function runTests() {
   try {
     await ReservationModel.collection.drop();
     console.log('Dropped reservations collection');
-  } catch (err) {
-    if (err.message.includes('ns not found')) {
+  } catch (err:unknown) {
+    if (err instanceof Error && err.message.includes('ns not found')) {
       console.log('Collection not found — fresh start');
     } else {
-      console.warn('Could not drop collection (likely in use or throttled):', err.message);
+      console.warn('Could not drop collection (likely in use or throttled):', err);
       // Continue anyway — deleteMany will clean
     }
   }
@@ -410,8 +410,12 @@ async function runTests() {
   try {
     await ReservationModel.syncIndexes();
     console.log('Indexes synced');
-  } catch (err) {
-    console.warn('Index sync failed:', err.message);
+  } catch (err:unknown) {
+    if (err instanceof Error) {
+      console.warn('Index sync failed:', err.message);
+    } else {
+      console.warn('Index sync failed:', err);
+    }
   }
 
   process.env.RESERVATION_TIMEOUT_MIN = '5';

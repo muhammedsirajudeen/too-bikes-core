@@ -127,19 +127,19 @@ function OrderDetailsPage() {
         }
     };
 
-    const getStatusText = (status: string) => {
-        switch (status) {
-            case "confirmed":
-                return "Order Confirmed";
-            case "ongoing":
-                return "Ride Ongoing";
-            case "completed":
-                return "Ride Completed";
-            case "cancelled":
-                return "Order Cancelled";
-            default:
-                return "Payment Pending";
-        }
+    const getStatusText = (status: string, paymentStatus: string) => {
+        if (status === "cancelled") return "Order Cancelled";
+        if (status === "completed") return "Ride Completed";
+        if (status === "ongoing") return "Ride Ongoing";
+        
+        // Detailed checks for pending/confirmed states combined with payment
+        if (status === "confirmed" && paymentStatus === "paid") return "Order Confirmed";
+        if (status === "confirmed" && paymentStatus === "pending") return "Payment Pending"; // Edge case
+        if (status === "pending" && paymentStatus === "paid") return "Processing Confirmation";
+        if (status === "pending" && paymentStatus === "pending") return "Payment Pending";
+        if (paymentStatus === "refunded") return "Payment Refunded";
+        
+        return "Order Status Update";
     };
 
     // Loading state
@@ -200,7 +200,7 @@ function OrderDetailsPage() {
                 <div className={`bg-gradient-to-r ${getStatusColor(order.status)} rounded-2xl p-6 text-white shadow-lg`}>
                     <div className="flex items-center gap-3 mb-2">
                         <Package className="w-8 h-8" />
-                        <h1 className="text-2xl font-bold">{getStatusText(order.status)}</h1>
+                        <h1 className="text-2xl font-bold">{getStatusText(order.status, order.paymentStatus)}</h1>
                     </div>
                     <p className="text-white/90 text-sm">
                         Order placed on {order.createdAt ? formatDate(order.createdAt) : "N/A"}

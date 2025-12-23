@@ -359,7 +359,7 @@ export class Order2Service {
     async handleRazorpayWebhook(payload: any, signature: string) {
     // Verify signature first
     const expectedSig = crypto
-        .createHmac('sha256', env.RAZORPAY_WEBHOOK_SECRET)
+        .createHmac('sha256', env.RAZORPAY_WEBHOOK_SECRET ?? "")
         .update(JSON.stringify(payload))
         .digest('hex');
 
