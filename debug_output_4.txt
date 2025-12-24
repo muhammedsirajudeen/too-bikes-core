@@ -1,0 +1,89 @@
+Fetching stores...
+Found 14 stores.
+
+Checking store: Bounce Worli (693441678e231fe66f228fb6)
+Fetching: http://localhost:3001/api/v1/available-vehicles?startTime=2025-12-25T18%3A41%3A15.420Z&endTime=2025-12-26T18%3A41%3A15.420Z&page=1&limit=10&storeId=693441678e231fe66f228fb6
+Available Vehicles: 0
+
+Checking store: Caltex Junction Store (69380448a248dd190d228fb7)
+Fetching: http://localhost:3001/api/v1/available-vehicles?startTime=2025-12-25T18%3A41%3A15.420Z&endTime=2025-12-26T18%3A41%3A15.420Z&page=1&limit=10&storeId=69380448a248dd190d228fb7
+Available Vehicles: 2
+ - Royal Enfield Classic 350 (Active: true, Brand: Royal Enfield)
+ - Hero Splendor Plus (Active: true, Brand: Hero)
+
+Checking store: Chandranagar Store (69357bd29212bbf1bc228fb7)
+Fetching: http://localhost:3001/api/v1/available-vehicles?startTime=2025-12-25T18%3A41%3A15.420Z&endTime=2025-12-26T18%3A41%3A15.420Z&page=1&limit=10&storeId=69357bd29212bbf1bc228fb7
+Available Vehicles: 6
+ - Suzuki Access 125 (Active: true, Brand: Suzuki)
+ - Yamaha FZ V3 (Active: true, Brand: Yamaha)
+ - Random Scooter 3 (Active: true, Brand: Generic)
+ - Random Scooter 6 (Active: true, Brand: Generic)
+ - Random Scooter 9 (Active: true, Brand: Generic)
+ - Random Scooter 12 (Active: true, Brand: Generic)
+
+Checking store: Ciltriq tharavad (694c3074b8143325829ac594)
+Fetching: http://localhost:3001/api/v1/available-vehicles?startTime=2025-12-25T18%3A41%3A15.420Z&endTime=2025-12-26T18%3A41%3A15.420Z&page=1&limit=10&storeId=694c3074b8143325829ac594
+Available Vehicles: 1
+ - Powli sanam (Active: true, Brand: Gommaless)
+
+Checking store: Drivezy Dadar (693441678e231fe66f228fba)
+Fetching: http://localhost:3001/api/v1/available-vehicles?startTime=2025-12-25T18%3A41%3A15.420Z&endTime=2025-12-26T18%3A41%3A15.420Z&page=1&limit=10&storeId=693441678e231fe66f228fba
+Available Vehicles: 0
+
+Checking store: Kannur City Center Store (69380448a248dd190d228fb5)
+Fetching: http://localhost:3001/api/v1/available-vehicles?startTime=2025-12-25T18%3A41%3A15.420Z&endTime=2025-12-26T18%3A41%3A15.420Z&page=1&limit=10&storeId=69380448a248dd190d228fb5
+Available Vehicles: 1
+ - TVS NTorq (Active: true, Brand: TVS)
+
+Checking store: Kannur Railway Station Store (6938061ca248dd190d228fbe)
+Fetching: http://localhost:3001/api/v1/available-vehicles?startTime=2025-12-25T18%3A41%3A15.420Z&endTime=2025-12-26T18%3A41%3A15.420Z&page=1&limit=10&storeId=6938061ca248dd190d228fbe
+Available Vehicles: 2
+ - Honda Activa 6G (Active: true, Brand: Honda)
+ - Yamaha MT 15 (Active: true, Brand: Yamaha)
+
+Checking store: Malampuzha Store (69357bd29212bbf1bc228fb6)
+Fetching: http://localhost:3001/api/v1/available-vehicles?startTime=2025-12-25T18%3A41%3A15.420Z&endTime=2025-12-26T18%3A41%3A15.420Z&page=1&limit=10&storeId=69357bd29212bbf1bc228fb6
+Available Vehicles: 7
+ - Royal Enfield Classic 350 (Active: true, Brand: Royal Enfield)
+ - Honda Shine (Active: true, Brand: Honda)
+ - Random Scooter 2 (Active: true, Brand: Generic)
+ - Random Scooter 5 (Active: true, Brand: Generic)
+ - Random Scooter 8 (Active: true, Brand: Generic)
+ - Random Scooter 11 (Active: true, Brand: Generic)
+ - Random Scooter 14 (Active: true, Brand: Generic)
+
+Checking store: New Kannur Bus Stand Store (6938061ca248dd190d228fbf)
+Fetching: http://localhost:3001/api/v1/available-vehicles?startTime=2025-12-25T18%3A41%3A15.420Z&endTime=2025-12-26T18%3A41%3A15.420Z&page=1&limit=10&storeId=6938061ca248dd190d228fbf
+Available Vehicles: 2
+ - TVS Jupiter (Active: true, Brand: TVS)
+ - Ather 450X (Active: true, Brand: Ather)
+
+Checking store: Palakkad Town Store (69357bd29212bbf1bc228fb5)
+Fetching: http://localhost:3001/api/v1/available-vehicles?startTime=2025-12-25T18%3A41%3A15.420Z&endTime=2025-12-26T18%3A41%3A15.420Z&page=1&limit=10&storeId=69357bd29212bbf1bc228fb5
+Available Vehicles: 6
+ - Honda Activa 6G (Active: true, Brand: Honda)
+ - Random Scooter 1 (Active: true, Brand: Generic)
+ - Random Scooter 4 (Active: true, Brand: Generic)
+ - Random Scooter 7 (Active: true, Brand: Generic)
+ - Random Scooter 10 (Active: true, Brand: Generic)
+ - Random Scooter 13 (Active: true, Brand: Generic)
+
+Checking store: Thavakkara Store (69380448a248dd190d228fb6)
+Fetching: http://localhost:3001/api/v1/available-vehicles?startTime=2025-12-25T18%3A41%3A15.420Z&endTime=2025-12-26T18%3A41%3A15.420Z&page=1&limit=10&storeId=69380448a248dd190d228fb6
+Available Vehicles: 2
+ - Yamaha FZ (Active: true, Brand: Yamaha)
+ - Ather 450X (Active: true, Brand: Ather)
+
+Checking store: Vogo Andheri (693441678e231fe66f228fb7)
+Fetching: http://localhost:3001/api/v1/available-vehicles?startTime=2025-12-25T18%3A41%3A15.420Z&endTime=2025-12-26T18%3A41%3A15.420Z&page=1&limit=10&storeId=693441678e231fe66f228fb7
+Available Vehicles: 0
+
+Checking store: Yulu Bandra (693441678e231fe66f228fb8)
+Fetching: http://localhost:3001/api/v1/available-vehicles?startTime=2025-12-25T18%3A41%3A15.420Z&endTime=2025-12-26T18%3A41%3A15.420Z&page=1&limit=10&storeId=693441678e231fe66f228fb8
+Available Vehicles: 0
+
+Checking store: ciltrique (694c0e55bba57b3c1e205eb7)
+Fetching: http://localhost:3001/api/v1/available-vehicles?startTime=2025-12-25T18%3A41%3A15.420Z&endTime=2025-12-26T18%3A41%3A15.420Z&page=1&limit=10&storeId=694c0e55bba57b3c1e205eb7
+Available Vehicles: 2
+ - TVS Jupiter (Active: true, Brand: TVS)
+ - 999  (Active: true, Brand: ciltriq)

@@ -1,0 +1,11 @@
+Fetching stores...
+Debug script error: TypeError: fetch failed
+    at node:internal/deps/undici/undici:13502:13
+    at async debugVehicles (C:\Users\Hafiz salman\OneDrive\Desktop\ciltriq\too-bikes-core\debug_vehicles.js:7:27) {
+  [cause]: Error: read ECONNRESET
+      at TCP.onStreamRead (node:internal/stream_base_commons:216:20) {
+    errno: -4077,
+    code: 'ECONNRESET',
+    syscall: 'read'
+  }
+}

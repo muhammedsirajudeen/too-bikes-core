@@ -185,8 +185,12 @@ function HomePageContentInner() {
 
             // Only add storeId if user manually selected a store
             // On initial load, let backend choose nearest store based on location
+            const urlStoreId = searchParams.get("storeId");
+
             if (userSelectedStore && selectedStore) {
                 params.storeId = selectedStore._id.toString();
+            } else if (urlStoreId) {
+                params.storeId = urlStoreId;
             }
 
             // Add location parameters if available
@@ -289,7 +293,7 @@ function HomePageContentInner() {
         } finally {
             setLoading(false);
         }
-    }, [startTime, endTime, userSelectedStore, selectedStore, currentPage, userLocation, locationChecked]);
+    }, [startTime, endTime, userSelectedStore, selectedStore, currentPage, userLocation, locationChecked, searchParams]);
 
     // Trigger fetch when dependencies change
     useEffect(() => {
