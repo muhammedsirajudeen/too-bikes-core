@@ -35,7 +35,7 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
   const [error, setError] = useState<string>("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isLicenseModalOpen, setIsLicenseModalOpen] = useState<boolean>(false);
-  const [userPhoneNumber, setUserPhoneNumber] = useState<string>("");
+  const [_userPhoneNumber, _setUserPhoneNumber] = useState<string>("");
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [authContext, setAuthContext] = useState<"booking" | "favorite">("booking");
 
@@ -206,7 +206,7 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
 
         if (response.data.success) {
           // User is authenticated, get user info from token data
-          setUserPhoneNumber(response.data.user?.phoneNumber || "");
+          _setUserPhoneNumber(response.data.user?.phoneNumber || "");
 
           // Check if user has already uploaded license
           const licenseCheckResponse = await axiosInstance.get("/api/v1/license/check");
@@ -239,7 +239,7 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
   const handleAuthComplete = async (phoneNumber: string, otp: string) => {
     // Store phone number and close auth modal
     console.log("Phone:", phoneNumber, "OTP:", otp);
-    setUserPhoneNumber(phoneNumber);
+    _setUserPhoneNumber(phoneNumber);
     setIsAuthModalOpen(false);
 
     // If auth was triggered by favorite button, don't redirect to booking flow
@@ -406,4 +406,3 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
     </div>
   );
 }
-

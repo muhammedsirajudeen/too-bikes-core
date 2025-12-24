@@ -5,7 +5,7 @@ import { HttpStatus } from "@/constants/status.constant";
  * Admin Logout Endpoint
  * Clears the admin refresh token cookie
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
     const response = NextResponse.json({
         success: true,
         message: "Logged out successfully"

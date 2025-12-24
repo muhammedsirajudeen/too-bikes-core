@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import PickupSelector from "./pickup";
@@ -28,7 +28,6 @@ export default function DesktopLandingPage() {
     // Validation errors
     const [pickupError, setPickupError] = useState<string>("");
     const [dropoffError, setDropoffError] = useState<string>("");
-    const [locationError, setLocationError] = useState<string | null>(null);
 
     // Location state
     const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -38,6 +37,7 @@ export default function DesktopLandingPage() {
     const [stores, setStores] = useState<IStore[]>([]);
     const [selectedStore, setSelectedStore] = useState<IStore | null>(null);
     const [storesLoading, setStoresLoading] = useState(true);
+    const [locationError, setLocationError] = useState<string>("");
 
     // Ref for scrolling to button
     const buttonRef = useRef<HTMLButtonElement>(null);
