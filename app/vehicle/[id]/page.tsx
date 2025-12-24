@@ -29,13 +29,16 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
   const searchParams = useSearchParams();
 
   // State management
-  const [vehicle, setVehicle] = useState<IVehicle | null>(null);
+  interface IVehicleWithImages extends Omit<IVehicle, 'image'> {
+    image?: { key: string; url: string }[];
+  }
+  const [vehicle, setVehicle] = useState<IVehicleWithImages | null>(null);
   const [faqs, setFaqs] = useState<IFAQ[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isLicenseModalOpen, setIsLicenseModalOpen] = useState<boolean>(false);
-  const [_userPhoneNumber, _setUserPhoneNumber] = useState<string>("");
+  // const [_userPhoneNumber, _setUserPhoneNumber] = useState<string>(""); // unused
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [authContext, setAuthContext] = useState<"booking" | "favorite">("booking");
 
@@ -86,7 +89,7 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
         return;
       }
 
-      setVehicle(data.data.vehicle);
+      setVehicle(data.data.vehicle as unknown as IVehicleWithImages);
       setFaqs(data.data.FAQ || []);
       setError("");
 
@@ -206,7 +209,7 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
 
         if (response.data.success) {
           // User is authenticated, get user info from token data
-          _setUserPhoneNumber(response.data.user?.phoneNumber || "");
+          // _setUserPhoneNumber(response.data.user?.phoneNumber || "");
 
           // Check if user has already uploaded license
           const licenseCheckResponse = await axiosInstance.get("/api/v1/license/check");
@@ -239,7 +242,7 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
   const handleAuthComplete = async (phoneNumber: string, otp: string) => {
     // Store phone number and close auth modal
     console.log("Phone:", phoneNumber, "OTP:", otp);
-    _setUserPhoneNumber(phoneNumber);
+    // _setUserPhoneNumber(phoneNumber);
     setIsAuthModalOpen(false);
 
     // If auth was triggered by favorite button, don't redirect to booking flow
@@ -355,7 +358,7 @@ export default function VehicleDetailPage({ params }: VehicleDetailPageProps) {
       {/* Image Slider with integrated controls */}
       <div className="px-4 mt-2">
         <VehicleImageSlider
-          images={vehicle.image && vehicle.image.length > 0 ? vehicle.image : ["/bike.png"]}
+          images={vehicle.image && vehicle.image.length > 0 ? vehicle.image.filter(img => img.url).map(img => img.url) : ["/bike.png"]}
           vehicleName={`${vehicle.brand} ${vehicle.name}`}
           isFavorite={isFavorite}
           onFavoriteToggle={handleFavoriteToggle}

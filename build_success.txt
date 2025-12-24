@@ -1,0 +1,26 @@
+
+> core@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.9
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · serverActions
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 12.6s
+   Linting and checking validity of types ...
+Failed to compile.
+
+./components/VehicleForm/VehicleForm.tsx:85:66
+Type error: Argument of type 'TFieldValues' is not assignable to parameter of type '{ store: string; name: string; brand: string; fuelType: "petrol" | "diesel" | "electric"; pricePerHour: number; licensePlate: string; isActive: boolean; description?: string | undefined; modelYear?: number | undefined; pricePerDay?: number | undefined; mileage?: number | undefined; image?: { ...; }[] | undefined; }'.
+  Type 'FieldValues' is missing the following properties from type '{ store: string; name: string; brand: string; fuelType: "petrol" | "diesel" | "electric"; pricePerHour: number; licensePlate: string; isActive: boolean; description?: string | undefined; modelYear?: number | undefined; pricePerDay?: number | undefined; mileage?: number | undefined; image?: { ...; }[] | undefined; }': store, name, brand, fuelType, and 3 more.
+
+[0m [90m 83 |[39m     [36mreturn[39m (
+ [90m 84 |[39m         [33m<[39m[33mForm[39m {[33m...[39mform}[33m>[39m
+[31m[1m>[22m[39m[90m 85 |[39m             [33m<[39m[33mform[39m onSubmit[33m=[39m{form[33m.[39mhandleSubmit((data) [33m=>[39m onSubmit(data))} className[33m=[39m[32m"space-y-4"[39m[33m>[39m
+ [90m    |[39m                                                                  [31m[1m^[22m[39m
+ [90m 86 |[39m                 [33m<[39m[33mFormField[39m
+ [90m 87 |[39m                     control[33m=[39m{form[33m.[39mcontrol}
+ [90m 88 |[39m                     name[33m=[39m[32m"image"[39m[0m
+Next.js build worker exited with code: 1 and signal: null

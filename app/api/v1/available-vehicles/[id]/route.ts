@@ -5,6 +5,7 @@ import { IFAQ } from "@/core/interface/model/IFaq.model";
 import { FaqService } from "@/services/shared/faq.service";
 import { AvailableVehiclesService } from "@/services/server/available-vehicles.service";
 import { IVehicle } from "@/core/interface/model/IVehicle.model";
+import { generateSignedUrl } from "@/utils/s3Storage.utils";
 
 export interface VehicleDetailResponse {
   success: boolean;
@@ -33,11 +34,28 @@ export const GET = withLoggingAndErrorHandling(
     const faqs = await faqService.getAllFaqs();
     const vehicle = await availableVehiclesService.findVehicleById(id!);
 
+    // Generate signed URLs for images
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const vehicleObj: any = (vehicle as any).toObject ? (vehicle as any).toObject() : vehicle;
+    
+    if (vehicleObj && vehicleObj.image) {
+        const images = await Promise.all((vehicleObj.image || []).map(async (key: string) => {
+            try {
+                const url = await generateSignedUrl(key);
+                return { key, url };
+            } catch (error) {
+                console.error(`Failed to sign URL for key ${key}:`, error);
+                return { key, url: null };
+            }
+        }));
+        vehicleObj.image = images;
+    }
+
     return NextResponse.json({
       success: true,
       message: "Available vehicle retrieved successfully",
       data: {
-        vehicle: vehicle,
+        vehicle: vehicleObj,
         FAQ: faqs
       }
     }, { status: HttpStatus.OK });

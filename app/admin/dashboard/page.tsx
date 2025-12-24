@@ -17,7 +17,7 @@ import {
     SidebarProvider,
     SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Home, Users, Settings, LogOut, Package, User, Moon, Sun, Store } from "lucide-react";
+import { Home, Users, Settings, LogOut, Package, User, Moon, Sun, Store, Car } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function AdminDashboard() {
@@ -30,14 +30,12 @@ export default function AdminDashboard() {
     useEffect(() => {
         setMounted(true);
 
-        // Check for admin token
         const token = localStorage.getItem('admin_access_token');
         if (!token) {
             router.push('/');
             return;
         }
 
-        // Decode token to get admin info
         try {
             const base64Url = token.split('.')[1];
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -57,18 +55,11 @@ export default function AdminDashboard() {
 
     const handleLogout = async () => {
         try {
-            // Call logout API to clear the HTTP-only cookie
-            await fetch('/api/v1/admin/logout', {
-                method: 'POST',
-            });
+            await fetch('/api/v1/admin/logout', { method: 'POST' });
         } catch (error) {
             console.error('Logout API error:', error);
         }
-
-        // Clear access token from localStorage
         localStorage.removeItem('admin_access_token');
-
-        // Redirect to home
         router.push('/');
     };
 
@@ -79,10 +70,10 @@ export default function AdminDashboard() {
         { name: 'Users', icon: Users, href: '/admin/users' },
         { name: 'Orders', icon: Package, href: '/admin/orders' },
         { name: 'Store Management', icon: Store, href: '/admin/stores' },
+        { name: 'Vehicle Management', icon: Car, href: '/admin/vehicles' },
         { name: 'Settings', icon: Settings, href: '/admin/settings' },
     ];
 
-    // Get initials for avatar
     const initials = adminUsername
         .split(' ')
         .map(n => n[0])

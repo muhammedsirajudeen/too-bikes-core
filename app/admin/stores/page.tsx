@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import {
     Sidebar,
     SidebarContent,
@@ -17,9 +18,20 @@ import {
     SidebarProvider,
     SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Home, Users, Settings, LogOut, Package, User, Moon, Sun, Store, Plus, Pencil, Trash2 } from "lucide-react";
+import { Home, Users, Settings, LogOut, Package, User, Moon, Sun, Store, Plus, Pencil, Trash2, Car } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StoreDialog } from "@/components/StoreForm/StoreDialog";
+import { toast } from "sonner";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Store {
     _id: string;
@@ -27,11 +39,12 @@ interface Store {
     description?: string;
     address: string;
     district: string;
-    latitude?: number;
-    longitude?: number;
     openingTime: string;
     closingTime: string;
     contactNumber?: string;
+    latitude: number;
+    longitude: number;
+    images?: string[];
 }
 
 export default function StoresPage() {
@@ -45,18 +58,23 @@ export default function StoresPage() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
     const [selectedStore, setSelectedStore] = useState<Store | undefined>();
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [storeToDelete, setStoreToDelete] = useState<string | null>(null);
+
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     useEffect(() => {
+
         setMounted(true);
 
-        // Check for admin token
         const token = localStorage.getItem('admin_access_token');
         if (!token) {
             router.push('/');
             return;
         }
 
-        // Decode token to get admin info
         try {
             const base64Url = token.split('.')[1];
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -83,9 +101,12 @@ export default function StoresPage() {
             const data = await response.json();
             if (data.success) {
                 setStores(data.data);
+            } else {
+                toast.error("Failed to load stores");
             }
         } catch (error) {
             console.error('Failed to fetch stores:', error);
+            toast.error("Failed to load stores");
         } finally {
             setLoading(false);
         }
@@ -93,13 +114,10 @@ export default function StoresPage() {
 
     const handleLogout = async () => {
         try {
-            await fetch('/api/v1/admin/logout', {
-                method: 'POST',
-            });
+            await fetch('/api/v1/admin/logout', { method: 'POST' });
         } catch (error) {
             console.error('Logout API error:', error);
         }
-
         localStorage.removeItem('admin_access_token');
         router.push('/');
     };
@@ -116,14 +134,17 @@ export default function StoresPage() {
         setDialogOpen(true);
     };
 
-    const handleDeleteStore = async (storeId: string) => {
-        if (!confirm("Are you sure you want to delete this store?")) {
-            return;
-        }
+    const handleDeleteClick = (storeId: string) => {
+        setStoreToDelete(storeId);
+        setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!storeToDelete) return;
 
         try {
             const token = localStorage.getItem('admin_access_token');
-            const response = await fetch(`/api/v1/admin/stores/${storeId}`, {
+            const response = await fetch(`/api/v1/admin/stores/${storeToDelete}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -132,14 +153,23 @@ export default function StoresPage() {
 
             const data = await response.json();
             if (data.success) {
+                toast.success("Store deleted successfully");
                 fetchStores();
             } else {
-                alert(data.message || "Failed to delete store");
+                toast.error(data.message || "Failed to delete store");
             }
         } catch (error) {
             console.error('Failed to delete store:', error);
-            alert("Failed to delete store");
+            toast.error("Failed to delete store");
+        } finally {
+            setDeleteDialogOpen(false);
+            setStoreToDelete(null);
         }
+    };
+
+    const handleDialogSuccess = () => {
+        fetchStores();
+        toast.success(dialogMode === "create" ? "Store added successfully" : "Store updated successfully");
     };
 
     if (!mounted) return null;
@@ -149,6 +179,7 @@ export default function StoresPage() {
         { name: 'Users', icon: Users, href: '/admin/users' },
         { name: 'Orders', icon: Package, href: '/admin/orders' },
         { name: 'Store Management', icon: Store, href: '/admin/stores' },
+        { name: 'Vehicle Management', icon: Car, href: '/admin/vehicles' },
         { name: 'Settings', icon: Settings, href: '/admin/settings' },
     ];
 
@@ -158,6 +189,13 @@ export default function StoresPage() {
         .join('')
         .toUpperCase()
         .slice(0, 2) || 'AU';
+
+    const totalPages = Math.ceil(stores.length / itemsPerPage);
+    const paginatedStores = stores.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
 
     return (
         <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -303,7 +341,7 @@ export default function StoresPage() {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                                                {stores.map((store) => (
+                                                {paginatedStores.map((store) => (
                                                     <tr key={store._id} className="hover:bg-gray-50 dark:hover:bg-[#0f0f23]">
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -348,7 +386,7 @@ export default function StoresPage() {
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    onClick={() => handleDeleteStore(store._id)}
+                                                                    onClick={() => handleDeleteClick(store._id)}
                                                                     className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                                                                 >
                                                                     <Trash2 className="h-4 w-4" />
@@ -359,6 +397,13 @@ export default function StoresPage() {
                                                 ))}
                                             </tbody>
                                         </table>
+                                        <div className="px-6 pb-4">
+                                            <DataTablePagination
+                                                currentPage={currentPage}
+                                                totalPages={totalPages}
+                                                onPageChange={setCurrentPage}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -372,8 +417,23 @@ export default function StoresPage() {
                 onOpenChange={setDialogOpen}
                 mode={dialogMode}
                 store={selectedStore}
-                onSuccess={fetchStores}
+                onSuccess={handleDialogSuccess}
             />
+
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the store from the database.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </SidebarProvider>
     );
 }

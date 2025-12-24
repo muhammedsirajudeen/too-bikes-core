@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { HttpStatus } from "@/constants/status.constant";
 
 /**
  * Admin Logout Endpoint
  * Clears the admin refresh token cookie
  */
-export async function POST(_request: NextRequest) {
+export async function POST() {
     const response = NextResponse.json({
         success: true,
         message: "Logged out successfully"

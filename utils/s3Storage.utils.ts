@@ -10,17 +10,13 @@ import { env } from '@/config/env.config';
 import logger from './logger.utils';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. Proper Multer File type — NO GLOBAL EXPRESS BULLSHIT
+// 1. Generic File Interface
 // ─────────────────────────────────────────────────────────────────────────────
-interface MulterFile {
-  /** Name of the file on the user's computer */
+export interface S3File {
+  /** Name of the file */
   originalname: string;
-  /** Name of the file on the server (if saved) */
-  filename?: string;
   /** Buffer of the entire file */
   buffer: Buffer;
-  /** Size of the file in bytes */
-  size: number;
   /** MIME type */
   mimetype: string;
 }
@@ -45,13 +41,14 @@ type S3Folder =
   | 'profile-photos'
   | 'certification-proofs'
   | 'resume'
-  | 'community-posts';
+  | 'community-posts'
+  | 'vehicles';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 4. Core functions — bulletproof
 // ─────────────────────────────────────────────────────────────────────────────
 export async function uploadToS3(
-  file: MulterFile,
+  file: S3File,
   folder: S3Folder
 ): Promise<{
   key: string;

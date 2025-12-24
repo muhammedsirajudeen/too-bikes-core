@@ -40,10 +40,10 @@ export default function MobileLandingPage() {
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
 
   // Store state
-  const [stores, setStores] = useState<IStore[]>([]);
+  // const [stores, setStores] = useState<IStore[]>([]);
   const [selectedStore, setSelectedStore] = useState<IStore | null>(null);
   const [storesLoading, setStoresLoading] = useState(true);
-  const [locationError, setLocationError] = useState<string>("");
+  const [, setLocationError] = useState<string>("");
 
   // Ref for scrolling to button
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -66,7 +66,7 @@ export default function MobileLandingPage() {
       const response = await fetch('/api/v1/stores');
       const data = await response.json();
       if (data.success && data.data && data.data.length > 0) {
-        setStores(data.data);
+        // setStores(data.data);
         // Auto-select first store as default
         setSelectedStore(data.data[0]);
       }
@@ -81,7 +81,7 @@ export default function MobileLandingPage() {
 
   const getLocation = async (): Promise<{ lat: number; lng: number } | null> => {
     if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by your browser");
+      // setLocationError("Geolocation is not supported by your browser");
       return null;
     }
 
@@ -97,9 +97,10 @@ export default function MobileLandingPage() {
           setIsRequestingLocation(false);
           resolve({ lat, lng });
         },
-        (error) => {
+        () => {
           setIsRequestingLocation(false);
-          let errorMsg = "Unable to get your location";
+          // let errorMsg = "Unable to get your location";
+          /*
           switch (error.code) {
             case error.PERMISSION_DENIED:
               errorMsg = "Location permission denied. You'll see all available vehicles.";
@@ -111,7 +112,8 @@ export default function MobileLandingPage() {
               errorMsg = "Location request timed out. You'll see all available vehicles.";
               break;
           }
-          setLocationError(errorMsg);
+          */
+          // setLocationError(errorMsg);
           resolve(null);
         }
       );

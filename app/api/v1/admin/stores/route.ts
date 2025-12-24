@@ -49,7 +49,7 @@ function verifyAdminAuth(request: NextRequest): { valid: boolean; message?: stri
         }
 
         return { valid: true };
-    } catch (error) {
+    } catch {
         return { valid: false, message: "Invalid token" };
     }
 }

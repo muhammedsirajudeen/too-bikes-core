@@ -1,0 +1,72 @@
+
+> core@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.9
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · serverActions
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 34.2s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/33) ...
+   Generating static pages (8/33) 
+   Generating static pages (16/33) 
+   Generating static pages (24/33) 
+ ✓ Generating static pages (33/33)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    3.63 kB         168 kB
+├ ○ /_not-found                            998 B         103 kB
+├ ○ /admin/dashboard                     4.83 kB         148 kB
+├ ○ /admin/login                         4.32 kB         121 kB
+├ ○ /admin/stores                        4.34 kB         191 kB
+├ ○ /admin/vehicles                      15.6 kB         211 kB
+├ ƒ /api/v1/admin/login                    197 B         102 kB
+├ ƒ /api/v1/admin/logout                   197 B         102 kB
+├ ƒ /api/v1/admin/stores                   197 B         102 kB
+├ ƒ /api/v1/admin/stores/[id]              197 B         102 kB
+├ ƒ /api/v1/admin/upload                   197 B         102 kB
+├ ƒ /api/v1/admin/vehicles                 197 B         102 kB
+├ ƒ /api/v1/admin/vehicles/[id]            197 B         102 kB
+├ ƒ /api/v1/auth/generate-otp              197 B         102 kB
+├ ƒ /api/v1/auth/logout                    197 B         102 kB
+├ ƒ /api/v1/auth/refresh-token             197 B         102 kB
+├ ƒ /api/v1/auth/verify-otp                197 B         102 kB
+├ ƒ /api/v1/auth/verify-token              197 B         102 kB
+├ ƒ /api/v1/available-vehicles             197 B         102 kB
+├ ƒ /api/v1/available-vehicles/[id]        197 B         102 kB
+├ ƒ /api/v1/license/check                  197 B         102 kB
+├ ƒ /api/v1/license/details                197 B         102 kB
+├ ƒ /api/v1/license/upload                 197 B         102 kB
+├ ƒ /api/v1/orders                         197 B         102 kB
+├ ƒ /api/v1/orders/[id]                    197 B         102 kB
+├ ƒ /api/v1/orders/[id]/confirm            197 B         102 kB
+├ ƒ /api/v1/stores                         197 B         102 kB
+├ ƒ /api/v1/user/favorites                 197 B         102 kB
+├ ƒ /api/v1/user/favorites/[vehicleId]     197 B         102 kB
+├ ƒ /api/v1/user/orders                    197 B         102 kB
+├ ƒ /api/v1/user/profile                   197 B         102 kB
+├ ○ /favorites                           4.04 kB         187 kB
+├ ○ /home                                16.9 kB         241 kB
+├ ƒ /order-confirmation/[orderId]        4.81 kB         142 kB
+├ ○ /order-review                        5.24 kB         192 kB
+├ ○ /orders                              4.07 kB         187 kB
+├ ƒ /orders/[orderId]                    4.93 kB         143 kB
+├ ○ /profile                              5.1 kB         188 kB
+└ ƒ /vehicle/[id]                        6.32 kB         199 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/1255-9494d7e861e97d68.js      45.9 kB
+  ├ chunks/4bd1b696-f785427dddbba9fb.js  54.2 kB
+  └ other shared chunks (total)          2.02 kB
+
+
+ƒ Middleware                             34.2 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

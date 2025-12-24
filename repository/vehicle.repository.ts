@@ -21,7 +21,7 @@ export class VehicleRepository extends BaseRepository<IVehicle> {
       {
         $match: {
           store: { $in: storeIds },
-          availability: true,
+          $or: [{ availability: { $exists: false } }, { availability: null }, { availability: true }],
           isActive: true
         }
       },

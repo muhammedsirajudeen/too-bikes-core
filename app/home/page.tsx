@@ -43,6 +43,11 @@ import FilterSidebar from "./(components)/FilterSidebar";
 import DesktopFilterBar from "./(components)/DesktopFilterBar";
 import { ThemeToggle } from "../components/ThemeToggle";
 
+// Extended interface for frontend display with signed URLs
+interface IVehicleWithImages extends Omit<IVehicle, 'image'> {
+    image?: { key: string; url: string }[];
+}
+
 function HomePageContentInner() {
     const [open, setOpen] = useState(false);
     const handleClose = (status: boolean) => {
@@ -96,8 +101,13 @@ function HomePageContentInner() {
     const [fuelType, setFuelType] = useState<string>("Both");
     const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
 
+    // Extended interface for frontend display with signed URLs
+
+
+
+
     // Data state
-    const [vehicles, setVehicles] = useState<IVehicle[]>([]);
+    const [vehicles, setVehicles] = useState<IVehicleWithImages[]>([]);
     const [pagination, setPagination] = useState<Pagination | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>("");
@@ -215,20 +225,20 @@ function HomePageContentInner() {
                 return;
             }
 
-            setVehicles(data.data);
+            setVehicles(data.data as unknown as IVehicleWithImages[]);
             setPagination(data.metadata?.pagination || null);
-            
+
             // Update stores list from response
             if (data.metadata?.stores && Array.isArray(data.metadata.stores)) {
                 setAllStores(data.metadata.stores);
-                
+
                 // Only set selected store on initial load (when user hasn't manually selected)
                 // This prevents infinite loop from re-triggering fetchVehicles
                 if (!userSelectedStore && !selectedStore && data.metadata.store) {
                     setSelectedStore(data.metadata.store);
                 }
             }
-            
+
             setError(""); // Clear any previous errors
         } catch (err) {
             // Handle axios errors
@@ -380,16 +390,16 @@ function HomePageContentInner() {
             page: "1",
             limit: limit.toString(),
         });
-        
+
         if (selectedStore) {
             params.set('storeId', selectedStore._id.toString());
         }
-        
+
         if (userLocation) {
             params.set('latitude', userLocation.latitude.toString());
             params.set('longitude', userLocation.longitude.toString());
         }
-        
+
         window.history.replaceState({}, '', `/home?${params.toString()}`);
 
         setShowFilters(false);
@@ -408,12 +418,12 @@ function HomePageContentInner() {
             page: "1",
             limit: limit.toString(),
         });
-        
+
         if (userLocation) {
             params.set('latitude', userLocation.latitude.toString());
             params.set('longitude', userLocation.longitude.toString());
         }
-        
+
         window.history.replaceState({}, '', `/home?${params.toString()}`);
     };
 
@@ -428,16 +438,16 @@ function HomePageContentInner() {
             page: newPage.toString(),
             limit: limit.toString(),
         });
-        
+
         if (selectedStore) {
             params.set('storeId', selectedStore._id.toString());
         }
-        
+
         if (userLocation) {
             params.set('latitude', userLocation.latitude.toString());
             params.set('longitude', userLocation.longitude.toString());
         }
-        
+
         window.history.replaceState({}, '', `/home?${params.toString()}`);
     };
 
@@ -701,7 +711,7 @@ function HomePageContentInner() {
 interface VehicleGridProps {
     loading: boolean;
     error: string;
-    vehicles: IVehicle[];
+    vehicles: IVehicleWithImages[];
     pagination: Pagination | null;
     currentPage: number;
     onPageChange: (page: number) => void;
@@ -774,7 +784,7 @@ function VehicleGrid({ loading, error, vehicles, pagination, currentPage, onPage
                                 <CardContent className="flex flex-col p-0 h-full">
                                     <div className="relative w-full aspect-16/10 overflow-hidden bg-white dark:bg-gray-900">
                                         <Image
-                                            src={vehicle.image && vehicle.image.length > 0 ? vehicle.image[0] : "/bike.png"}
+                                            src={vehicle.image && vehicle.image.length > 0 && vehicle.image[0].url ? vehicle.image[0].url : "/bike.png"}
                                             alt={vehicle.name}
                                             fill
                                             className="object-cover"

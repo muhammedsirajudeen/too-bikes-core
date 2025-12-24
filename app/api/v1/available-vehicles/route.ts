@@ -5,6 +5,7 @@ import { querySchema } from "@/lib/schemas/availableVehicles.schema";
 import { AvailableVehiclesService } from "@/services/server/available-vehicles.service";
 import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
 import { NextRequest, NextResponse } from "next/server";
+import { generateSignedUrl } from "@/utils/s3Storage.utils";
 
 export interface VehicleResponse {
   success: boolean;
@@ -52,10 +53,25 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
     validated.data.longitude
   );
 
+  const vehiclesWithUrls = await Promise.all(vehicles.map(async (vehicle) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const vehicleObj: any = (vehicle as any).toObject ? (vehicle as any).toObject() : vehicle;
+    const images = await Promise.all((vehicleObj.image || []).map(async (key: string) => {
+        try {
+            const url = await generateSignedUrl(key);
+            return { key, url };
+        } catch (error) {
+            console.error(`Failed to sign URL for key ${key}:`, error);
+            return { key, url: null };
+        }
+    }));
+    return { ...vehicleObj, image: images };
+  }));
+
   return NextResponse.json({
     success: true,
     message: "Available vehicles retrieved successfully",
-    data: vehicles,
+    data: vehiclesWithUrls,
     metadata: {
       district: district,
       store: store,
