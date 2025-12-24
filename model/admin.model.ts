@@ -14,9 +14,10 @@ export interface IAdmin {
 }
 
 const adminSchema = new mongoose.Schema({
-    username: { type: String, required: true },
+    username: { type: String, required: true, unique: true, index: true },
     password: { type: String, required: true },
 });
 
 
-export const AdminModel = mongoose.model("Admin", adminSchema);
+//singleton for models
+export const AdminModel = mongoose.models.Admin || mongoose.model("Admin", adminSchema);

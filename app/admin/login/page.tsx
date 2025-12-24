@@ -13,7 +13,7 @@ export default function AdminLoginPage() {
     const [mounted, setMounted] = useState(false);
 
     // Form state
-    const [email, setEmail] = useState("");
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -33,32 +33,37 @@ export default function AdminLoginPage() {
         setIsLoading(true);
 
         // Basic validation
-        if (!email || !password) {
-            setError("Please enter both email and password");
+        if (!username || !password) {
+            setError("Please enter both username and password");
             setIsLoading(false);
             return;
         }
 
         try {
-            // TODO: Implement actual login API call
-            // const response = await fetch('/api/admin/login', {
-            //   method: 'POST',
-            //   headers: { 'Content-Type': 'application/json' },
-            //   body: JSON.stringify({ email, password })
-            // });
+            const response = await fetch('/api/v1/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
 
-            // Placeholder for now
-            console.log("Login attempt:", { email, password });
+            const data = await response.json();
 
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (!response.ok || !data.success) {
+                setError(data.message || "Login failed. Please try again.");
+                setIsLoading(false);
+                return;
+            }
 
-            // TODO: Handle successful login and redirect
-            // router.push('/admin/dashboard');
+            // Store token in localStorage
+            if (data.token) {
+                localStorage.setItem('admin_access_token', data.token);
+            }
+
+            // Redirect to admin dashboard
+            router.push('/admin/dashboard');
 
         } catch (err) {
             setError("Login failed. Please try again.");
-        } finally {
             setIsLoading(false);
         }
     };
@@ -101,15 +106,15 @@ export default function AdminLoginPage() {
 
                         <form onSubmit={handleLogin} className="space-y-6">
                             <div>
-                                <label htmlFor="email-mobile" className="block text-sm font-medium mb-2">
-                                    Email
+                                <label htmlFor="username-mobile" className="block text-sm font-medium mb-2">
+                                    Username
                                 </label>
                                 <Input
-                                    id="email-mobile"
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="admin@toobikes.com"
+                                    id="username-mobile"
+                                    type="text"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    placeholder="admin"
                                     className="h-12 rounded-xl"
                                     disabled={isLoading}
                                 />
@@ -182,15 +187,15 @@ export default function AdminLoginPage() {
 
                         <form onSubmit={handleLogin} className="space-y-6">
                             <div>
-                                <label htmlFor="email-desktop" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                                    Email
+                                <label htmlFor="username-desktop" className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                                    Username
                                 </label>
                                 <Input
-                                    id="email-desktop"
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="admin@toobikes.com"
+                                    id="username-desktop"
+                                    type="text"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    placeholder="admin"
                                     className="h-14 rounded-xl text-base"
                                     disabled={isLoading}
                                 />
