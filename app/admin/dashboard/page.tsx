@@ -17,7 +17,7 @@ import {
     SidebarProvider,
     SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Home, Users, Settings, LogOut, Package, User, Moon, Sun } from "lucide-react";
+import { Home, Users, Settings, LogOut, Package, User, Moon, Sun, Store } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function AdminDashboard() {
@@ -78,6 +78,7 @@ export default function AdminDashboard() {
         { name: 'Dashboard', icon: Home, href: '/admin/dashboard' },
         { name: 'Users', icon: Users, href: '/admin/users' },
         { name: 'Orders', icon: Package, href: '/admin/orders' },
+        { name: 'Store Management', icon: Store, href: '/admin/stores' },
         { name: 'Settings', icon: Settings, href: '/admin/settings' },
     ];
 
