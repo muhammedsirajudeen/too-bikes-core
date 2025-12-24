@@ -2,21 +2,30 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-} from "@/components/ui/sheet";
-import { Menu, Home, Users, Settings, LogOut, Package } from "lucide-react";
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarProvider,
+    SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Home, Users, Settings, LogOut, Package, User, Moon, Sun } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function AdminDashboard() {
     const router = useRouter();
+    const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
     const [adminUsername, setAdminUsername] = useState<string>("");
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
 
     useEffect(() => {
         setMounted(true);
@@ -72,121 +81,179 @@ export default function AdminDashboard() {
         { name: 'Settings', icon: Settings, href: '/admin/settings' },
     ];
 
-    const SidebarContent = () => (
-        <div className="flex flex-col h-full">
-            <div className="flex-1 py-6">
-                <nav className="space-y-2 px-3">
-                    {navigationItems.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                            <button
-                                key={item.name}
-                                onClick={() => {
-                                    router.push(item.href);
-                                    setIsSidebarOpen(false);
-                                }}
-                                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-left"
-                            >
-                                <Icon className="w-5 h-5" />
-                                <span className="font-medium">{item.name}</span>
-                            </button>
-                        );
-                    })}
-                </nav>
-            </div>
-
-            <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-                <div className="mb-3 px-2">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Logged in as</p>
-                    <p className="font-semibold">{adminUsername}</p>
-                </div>
-                <Button
-                    onClick={handleLogout}
-                    variant="outline"
-                    className="w-full justify-start gap-2"
-                >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                </Button>
-            </div>
-        </div>
-    );
+    // Get initials for avatar
+    const initials = adminUsername
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2) || 'AU';
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-[#0B0A1B]">
-            {/* Mobile Header */}
-            <div className="md:hidden sticky top-0 z-40 bg-white dark:bg-[#1a1a2e] border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between px-4 py-3">
-                    <h1 className="text-xl font-bold">Admin Panel</h1>
-                    <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-                        <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <Menu className="w-6 h-6" />
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent side="left" className="w-72 p-0">
-                            <SheetHeader className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                                <SheetTitle>Navigation</SheetTitle>
-                            </SheetHeader>
-                            <SidebarContent />
-                        </SheetContent>
-                    </Sheet>
-                </div>
-            </div>
+        <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+            <div className="flex min-h-screen w-full">
+                <Sidebar collapsible="icon">
+                    <SidebarHeader className="border-b border-gray-200 dark:border-gray-700 p-4">
+                        <div className="flex items-center gap-2">
+                            <User className="w-5 h-5" />
+                            <span className="font-bold group-data-[collapsible=icon]:hidden">Admin Panel</span>
+                        </div>
+                    </SidebarHeader>
 
-            {/* Desktop Layout */}
-            <div className="hidden md:flex h-screen">
-                {/* Desktop Sidebar */}
-                <aside className="w-64 bg-white dark:bg-[#1a1a2e] border-r border-gray-200 dark:border-gray-700">
-                    <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                        <h1 className="text-2xl font-bold">Admin Panel</h1>
+                    <SidebarContent>
+                        <SidebarGroup>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    {navigationItems.map((item) => {
+                                        const Icon = item.icon;
+                                        return (
+                                            <SidebarMenuItem key={item.name}>
+                                                <SidebarMenuButton
+                                                    onClick={() => router.push(item.href)}
+                                                    tooltip={item.name}
+                                                >
+                                                    <Icon />
+                                                    <span>{item.name}</span>
+                                                </SidebarMenuButton>
+                                            </SidebarMenuItem>
+                                        );
+                                    })}
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+                    </SidebarContent>
+
+                    <SidebarFooter className="border-t border-gray-200 dark:border-gray-700 p-2">
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    size="lg"
+                                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                                >
+                                    <Avatar className="h-8 w-8 rounded-lg">
+                                        <AvatarFallback className="rounded-lg bg-blue-600 text-white">
+                                            {initials}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="grid flex-1 text-left text-sm leading-tight">
+                                        <span className="truncate font-semibold">{adminUsername}</span>
+                                        <span className="truncate text-xs text-gray-500 dark:text-gray-400">Admin User</span>
+                                    </div>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton onClick={handleLogout} tooltip="Logout">
+                                    <LogOut />
+                                    <span>Logout</span>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarFooter>
+                </Sidebar>
+
+                <main className="flex-1 overflow-auto bg-gray-50 dark:bg-[#0f0f23]">
+                    {/* Header with sidebar trigger */}
+                    <div className="sticky top-0 z-10 bg-white dark:bg-[#1a1a2e] border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center gap-3">
+                        <SidebarTrigger />
+                        <div className="flex items-center justify-between flex-1">
+                            <div>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Workspace</p>
+                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Home</h2>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="text-sm text-gray-500 dark:text-gray-400 hidden md:block">
+                                    Press <kbd className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600">Ctrl+B</kbd> to toggle
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                                    className="h-9 w-9"
+                                >
+                                    <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                                    <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                                    <span className="sr-only">Toggle theme</span>
+                                </Button>
+                            </div>
+                        </div>
                     </div>
-                    <SidebarContent />
-                </aside>
 
-                {/* Main Content */}
-                <main className="flex-1 overflow-auto">
+                    {/* Main Content */}
                     <div className="p-8">
                         <div className="max-w-6xl mx-auto">
-                            <h2 className="text-3xl font-bold mb-2">Welcome, {adminUsername}!</h2>
+                            <h2 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">Dashboard</h2>
                             <p className="text-gray-600 dark:text-gray-400 mb-8">
-                                Manage your TooBikes platform from here.
+                                Overview of your TooBikes platform metrics and analytics.
                             </p>
 
                             {/* Dashboard Cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <div className="bg-white dark:bg-[#1a1a2e] rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                                            <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                                <div className="bg-white dark:bg-[#1e1e3f] rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">Total Users</p>
+                                        <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <p className="text-3xl font-bold mb-1 text-gray-900 dark:text-white">1,234</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">↑ 12% from last month</p>
+                                </div>
+
+                                <div className="bg-white dark:bg-[#1e1e3f] rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">Total Orders</p>
+                                        <Package className="w-5 h-5 text-green-600 dark:text-green-400" />
+                                    </div>
+                                    <p className="text-3xl font-bold mb-1 text-gray-900 dark:text-white">567</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">↑ 8% from last month</p>
+                                </div>
+
+                                <div className="bg-white dark:bg-[#1e1e3f] rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">Active Bikes</p>
+                                        <Settings className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                                    </div>
+                                    <p className="text-3xl font-bold mb-1 text-gray-900 dark:text-white">89</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">↑ 5% from last month</p>
+                                </div>
+                            </div>
+
+                            {/* Additional sections matching the reference image */}
+                            <div className="space-y-6">
+                                <div className="bg-white dark:bg-[#1e1e3f] rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+                                    <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Revenue Breakdown</h3>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between py-2">
+                                            <span className="text-gray-600 dark:text-gray-400">Platform Revenue</span>
+                                            <span className="font-semibold text-gray-900 dark:text-white">₹45,000</span>
                                         </div>
-                                        <div>
-                                            <p className="text-sm text-gray-600 dark:text-gray-400">Total Users</p>
-                                            <p className="text-2xl font-bold">1,234</p>
+                                        <div className="flex items-center justify-between py-2">
+                                            <span className="text-gray-600 dark:text-gray-400">Vendor Payouts</span>
+                                            <span className="font-semibold text-gray-900 dark:text-white">₹32,000</span>
+                                        </div>
+                                        <div className="flex items-center justify-between py-2">
+                                            <span className="text-gray-600 dark:text-gray-400">Delivery Payouts</span>
+                                            <span className="font-semibold text-gray-900 dark:text-white">₹8,500</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="bg-white dark:bg-[#1a1a2e] rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                                            <Package className="w-6 h-6 text-green-600 dark:text-green-400" />
+                                <div className="bg-white dark:bg-[#1e1e3f] rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+                                    <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Customer Overview</h3>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between py-2">
+                                            <span className="text-gray-600 dark:text-gray-400">Total Customers</span>
+                                            <span className="font-semibold text-gray-900 dark:text-white">1,234</span>
                                         </div>
-                                        <div>
-                                            <p className="text-sm text-gray-600 dark:text-gray-400">Total Orders</p>
-                                            <p className="text-2xl font-bold">567</p>
+                                        <div className="flex items-center justify-between py-2">
+                                            <span className="text-gray-600 dark:text-gray-400">Active Customers</span>
+                                            <span className="font-semibold text-gray-900 dark:text-white">892</span>
                                         </div>
-                                    </div>
-                                </div>
-
-                                <div className="bg-white dark:bg-[#1a1a2e] rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                                            <Settings className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                                        <div className="flex items-center justify-between py-2">
+                                            <span className="text-gray-600 dark:text-gray-400">Inactive Customers</span>
+                                            <span className="font-semibold text-gray-900 dark:text-white">342</span>
                                         </div>
-                                        <div>
-                                            <p className="text-sm text-gray-600 dark:text-gray-400">Active Bikes</p>
-                                            <p className="text-2xl font-bold">89</p>
+                                        <div className="flex items-center justify-between py-2">
+                                            <span className="text-gray-600 dark:text-gray-400">Repeat Customers</span>
+                                            <span className="font-semibold text-gray-900 dark:text-white">456</span>
                                         </div>
                                     </div>
                                 </div>
@@ -195,53 +262,6 @@ export default function AdminDashboard() {
                     </div>
                 </main>
             </div>
-
-            {/* Mobile Main Content */}
-            <div className="md:hidden p-6">
-                <h2 className="text-2xl font-bold mb-2">Welcome, {adminUsername}!</h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                    Manage your TooBikes platform from here.
-                </p>
-
-                {/* Dashboard Cards */}
-                <div className="space-y-4">
-                    <div className="bg-white dark:bg-[#1a1a2e] rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                                <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Total Users</p>
-                                <p className="text-2xl font-bold">1,234</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-[#1a1a2e] rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                                <Package className="w-6 h-6 text-green-600 dark:text-green-400" />
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Total Orders</p>
-                                <p className="text-2xl font-bold">567</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-[#1a1a2e] rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                                <Settings className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Active Bikes</p>
-                                <p className="text-2xl font-bold">89</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </SidebarProvider>
     );
 }
