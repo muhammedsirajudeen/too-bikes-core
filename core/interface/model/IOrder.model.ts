@@ -20,6 +20,12 @@ export interface IOrder extends Document {
   razorpayPaymentId?: string;
   razorpaySignature?: string;
 
+  // License snapshot at time of order creation
+  license?: {
+    frontImage: string; // S3 storage key for front of license
+    backImage: string;  // S3 storage key for back of license
+  };
+
   status:
   | "pending"
   | "confirmed"

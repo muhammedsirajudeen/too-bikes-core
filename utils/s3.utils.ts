@@ -1,4 +1,5 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "@/config/env.config";
 import logger from "./logger.utils";
 
@@ -116,5 +117,29 @@ export async function uploadMultipleToS3(uploads: UploadToS3Params[]): Promise<s
         }
 
         throw error;
+    }
+}
+
+/**
+ * Generate a presigned URL for accessing a private S3 object
+ * @param key - S3 object key
+ * @param expiresIn - URL expiration time in seconds (default: 3600 = 1 hour)
+ * @returns Presigned URL for the object
+ */
+export async function getPresignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
+    try {
+        const command = new GetObjectCommand({
+            Bucket: env.S3_BUCKET_NAME,
+            Key: key,
+        });
+
+        const url = await getSignedUrl(s3Client, command, {  expiresIn });
+        
+        logger.debug(`Generated presigned URL for key: ${key}`);
+        
+        return url;
+    } catch (error) {
+        logger.error("Failed to generate presigned URL:", error);
+        throw new Error(`Presigned URL generation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
 }

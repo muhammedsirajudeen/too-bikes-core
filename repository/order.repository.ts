@@ -15,8 +15,21 @@ export class OrderRepository extends BaseRepository<IOrder> {
     return this.model
       .findById(id)
       .populate("user", "name phoneNumber email")
-      .populate("vehicle", "name brand image fuelType pricePerDay pricePerHour")
-      .populate("store", "name address contactNumber openingTime closingTime")
+      .populate("vehicle", "name brand image fuelType pricePerDay pricePerHour licensePlate")
+      .populate("store", "name address contactNumber openingTime closingTime location")
+      .exec();
+  }
+
+  /**
+   * Find all orders with populated references (for admin)
+   */
+  async findAllWithPopulate(): Promise<IOrder[]> {
+    return this.model
+      .find()
+      .populate("user", "name phoneNumber email")
+      .populate("vehicle", "name brand licensePlate")
+      .populate("store", "name location")
+      .sort({ createdAt: -1 })
       .exec();
   }
 

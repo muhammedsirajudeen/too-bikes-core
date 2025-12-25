@@ -93,18 +93,10 @@ export class UserLicenseService {
                 backImageKey
             );
 
-            // If there was an existing license, delete the old images from S3
-            if (existingLicense) {
-                logger.info(`Deleting old license images for user ${userId}`);
-                try {
-                    await deleteFromS3(existingLicense.frontImage);
-                    await deleteFromS3(existingLicense.backImage);
-                    logger.info(`Old license images deleted successfully`);
-                } catch (deleteError) {
-                    // Log error but don't fail the operation since new license is already saved
-                    logger.error("Failed to delete old license images:", deleteError);
-                }
-            }
+            // IMPORTANT: We do NOT delete old license images from S3
+            // Old licenses need to be retained for historical order records
+            // and compliance purposes. When admins view past orders, they need
+            // to see the license that was valid at the time of booking.
 
             logger.info(`License uploaded successfully for user ${userId}, license ID: ${license._id}`);
 

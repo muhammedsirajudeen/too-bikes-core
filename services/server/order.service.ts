@@ -94,7 +94,8 @@ export class OrderService {
     }
 
     /**
-     * Confirm order after successful payment
+     * Confirm payment for order (does NOT confirm the order itself)
+     * Order status is set to 'pending' and awaits admin license review
      */
     async confirmOrder(
         orderId: string,
@@ -104,8 +105,9 @@ export class OrderService {
             razorpaySignature?: string;
         }
     ): Promise<IOrder | null> {
+        // Payment is confirmed, but order awaits admin license review
         const order = await this.orderRepository.update(orderId, {
-            status: "confirmed",
+            status: "pending", // Changed from 'confirmed' - admin must review license
             paymentStatus: "paid",
             razorpayPaymentId: paymentData.razorpayPaymentId,
             razorpaySignature: paymentData.razorpaySignature,

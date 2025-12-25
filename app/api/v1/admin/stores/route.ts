@@ -1,6 +1,7 @@
 import { HttpStatus } from "@/constants/status.constant";
 import { StoreRepository } from "@/repository/store.repository";
 import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
+import { verifyAdminAuthFromRequest } from "@/utils/admin-auth.utils";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -21,38 +22,73 @@ const createStoreSchema = z.object({
 });
 
 /**
- * Verify admin token from Authorization header
+ * GET /api/v1/admin/stores
+ * Get all stores (for admin)
  */
-function verifyAdminAuth(request: NextRequest): { valid: boolean; message?: string } {
-    const authHeader = request.headers.get('authorization');
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return { valid: false, message: "No authorization token provided" };
+export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
+    // Verify admin authentication
+    const authCheck = verifyAdminAuthFromRequest(request);
+    if (!authCheck.valid) {
+        return NextResponse.json({
+            success: false,
+            message: authCheck.message
+        }, { status: HttpStatus.UNAUTHORIZED });
     }
 
-    const token = authHeader.split(' ')[1];
+    // Get pagination and filter params from query
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const skip = (page - 1) * limit;
+    
+    // Get filter params
+    const districtFilter = searchParams.get('district');
+    const searchQuery = searchParams.get('search')?.toLowerCase();
 
-    try {
-        // Decode JWT to verify it's an admin token
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(
-            atob(base64)
-                .split('')
-                .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                .join('')
-        );
-        const payload = JSON.parse(jsonPayload);
+    let allStores = await storeRepo.findAll({});
 
-        if (payload.role !== 'admin') {
-            return { valid: false, message: "Unauthorized: Admin access required" };
-        }
-
-        return { valid: true };
-    } catch {
-        return { valid: false, message: "Invalid token" };
+    // Apply district filter
+    if (districtFilter && districtFilter !== 'all') {
+        allStores = allStores.filter(store => store.district === districtFilter);
     }
-}
+
+    // Apply search filter
+    if (searchQuery) {
+        allStores = allStores.filter(store => {
+            const storeName = store.name?.toLowerCase() || "";
+            const storeAddress = store.address?.toLowerCase() || "";
+            const storeDistrict = store.district?.toLowerCase() || "";
+            const storeContact = store.contactNumber?.toLowerCase() || "";
+
+            return storeName.includes(searchQuery) ||
+                   storeAddress.includes(searchQuery) ||
+                   storeDistrict.includes(searchQuery) ||
+                   storeContact.includes(searchQuery);
+        });
+    }
+
+    // Get total count after filtering
+    const total = allStores.length;
+    const totalPages = Math.ceil(total / limit);
+
+    // Apply pagination
+    const paginatedStores = allStores.slice(skip, skip + limit);
+
+    return NextResponse.json({
+        success: true,
+        message: "Stores retrieved successfully",
+        data: paginatedStores,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext: page < totalPages,
+            hasPrev: page > 1,
+        },
+    }, { status: HttpStatus.OK });
+});
+
 
 /**
  * POST /api/v1/admin/stores
@@ -60,7 +96,7 @@ function verifyAdminAuth(request: NextRequest): { valid: boolean; message?: stri
  */
 export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => {
     // Verify admin authentication
-    const authCheck = verifyAdminAuth(request);
+    const authCheck = verifyAdminAuthFromRequest(request);
     if (!authCheck.valid) {
         return NextResponse.json({
             success: false,

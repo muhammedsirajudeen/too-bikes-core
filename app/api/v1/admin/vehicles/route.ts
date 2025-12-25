@@ -1,6 +1,7 @@
 import { HttpStatus } from "@/constants/status.constant";
 import { VehicleRepository } from "@/repository/vehicle.repository";
 import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
+import { verifyAdminAuthFromRequest } from "@/utils/admin-auth.utils";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { generateSignedUrl } from "@/utils/s3Storage.utils";
@@ -24,46 +25,12 @@ const createVehicleSchema = z.object({
 });
 
 /**
- * Verify admin token from Authorization header
- */
-function verifyAdminAuth(request: NextRequest): { valid: boolean; message?: string } {
-    const authHeader = request.headers.get('authorization');
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return { valid: false, message: "No authorization token provided" };
-    }
-
-    const token = authHeader.split(' ')[1];
-
-    try {
-        // Decode JWT to verify it's an admin token
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(
-            atob(base64)
-                .split('')
-                .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                .join('')
-        );
-        const payload = JSON.parse(jsonPayload);
-
-        if (payload.role !== 'admin') {
-            return { valid: false, message: "Unauthorized: Admin access required" };
-        }
-
-        return { valid: true };
-    } catch {
-        return { valid: false, message: "Invalid token" };
-    }
-}
-
-/**
  * GET /api/v1/admin/vehicles
  * Get all vehicles (for admin)
  */
 export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
     // Verify admin authentication
-    const authCheck = verifyAdminAuth(request);
+    const authCheck = verifyAdminAuthFromRequest(request);
     if (!authCheck.valid) {
         return NextResponse.json({
             success: false,
@@ -71,10 +38,23 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
         }, { status: HttpStatus.UNAUTHORIZED });
     }
 
-    const vehicles = await vehicleRepo.findAll({});
+    // Get pagination params from query
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const skip = (page - 1) * limit;
+
+    const allVehicles = await vehicleRepo.findAll({});
+
+    // Get total count
+    const total = allVehicles.length;
+    const totalPages = Math.ceil(total / limit);
+
+    // Apply pagination
+    const paginatedVehicles = allVehicles.slice(skip, skip + limit);
 
     // Generate signed URLs for images
-    const vehiclesWithUrls = await Promise.all(vehicles.map(async (vehicle) => {
+    const vehiclesWithUrls = await Promise.all(paginatedVehicles.map(async (vehicle) => {
         const vehicleObj = vehicle.toObject ? vehicle.toObject() : vehicle;
         const images = await Promise.all((vehicleObj.image || []).map(async (key: string) => {
             try {
@@ -91,7 +71,15 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
     return NextResponse.json({
         success: true,
         message: "Vehicles retrieved successfully",
-        data: vehiclesWithUrls
+        data: vehiclesWithUrls,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext: page < totalPages,
+            hasPrev: page > 1,
+        },
     }, { status: HttpStatus.OK });
 });
 
@@ -101,7 +89,7 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
  */
 export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => {
     // Verify admin authentication
-    const authCheck = verifyAdminAuth(request);
+    const authCheck = verifyAdminAuthFromRequest(request);
     if (!authCheck.valid) {
         return NextResponse.json({
             success: false,

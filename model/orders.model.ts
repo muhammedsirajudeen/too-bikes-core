@@ -16,6 +16,12 @@
       razorpayPaymentId: { type: String },
       razorpaySignature: { type: String },
 
+      // License snapshot at time of order creation
+      license: {
+        frontImage: { type: String }, // S3 storage key for front of license
+        backImage: { type: String }   // S3 storage key for back of license
+      },
+
       status: {
         type: String,
         enum: ["pending", "confirmed", "ongoing", "completed", "cancelled"],

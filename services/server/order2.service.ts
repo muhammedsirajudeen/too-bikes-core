@@ -1,6 +1,7 @@
 import { env } from "@/config/env.config";
 import { OrderRepository } from "@/repository/order.repository";
 import { ReservationRepository } from "@/repository/reservation.repository";
+import { UserLicenseRepository } from "@/repository/user.license.repository";
 import mongoose from "mongoose";
 import { toObjectId } from "@/utils/convert-object-id.util";
 
@@ -21,6 +22,7 @@ export class Order2Service {
         private readonly orderRepository = new OrderRepository(),
         private readonly reservationRepository = new ReservationRepository(),
         private readonly vehicleRepository = new VehicleRepository(),
+        private readonly licenseRepository = new UserLicenseRepository(),
         private razorpay: any = new Razorpay({
           key_id: env.RAZORPAY_KEY  || "",
           key_secret: env.RAZORPAY_SECRET || "",
@@ -274,6 +276,9 @@ export class Order2Service {
         );
         console.log(`Created reservation ${reservation._id} - committing`);
 
+        // Fetch user's license to snapshot it in the order
+        const userLicense = await this.licenseRepository.findByUserId(toObjectId(userId));
+        
         const order = await this.orderRepository.create(
           {
             user: toObjectId(userId),
@@ -282,6 +287,12 @@ export class Order2Service {
             startTime,
             endTime,
             totalAmount,
+            // Snapshot the license at order creation time
+            // This ensures admin can see the license even if user updates it later
+            license: userLicense ? {
+              frontImage: userLicense.frontImage,
+              backImage: userLicense.backImage
+            } : undefined,
             status: 'pending',
             paymentStatus: 'pending',
           },
@@ -357,33 +368,33 @@ export class Order2Service {
 
     // Webhook handler (critical — make idempotent)
     async handleRazorpayWebhook(payload: any, signature: string) {
-    // Verify signature first
-    const expectedSig = crypto
-        .createHmac('sha256', env.RAZORPAY_WEBHOOK_SECRET ?? "")
-        .update(JSON.stringify(payload))
-        .digest('hex');
+      // Verify signature first
+      const expectedSig = crypto
+          .createHmac('sha256', env.RAZORPAY_WEBHOOK_SECRET ?? "")
+          .update(JSON.stringify(payload))
+          .digest('hex');
 
-    if (expectedSig !== signature) throw new Error('Invalid signature');
+      if (expectedSig !== signature) throw new Error('Invalid signature');
 
-    const event = payload.event;
+      const event = payload.event;
 
-    if (event === 'payment.captured' || event === 'order.paid') {
-        const razorpayOrderId = payload.payload.payment?.entity?.order_id || payload.payload.order?.entity?.id;
+      if (event === 'payment.captured' || event === 'order.paid') {
+          const razorpayOrderId = payload.payload.payment?.entity?.order_id || payload.payload.order?.entity?.id;
 
-        // Find order by razorpayOrderId
-        const order = await this.orderRepository.findOne({ razorpayOrderId });
+          // Find order by razorpayOrderId
+          const order = await this.orderRepository.findOne({ razorpayOrderId });
 
-        if (!order || order.paymentStatus === 'paid') return; // idempotent
+          if (!order || order.paymentStatus === 'paid') return; // idempotent
 
-        // Confirm both
-        await this.orderRepository.update(order._id.toString(), {
-        paymentStatus: 'paid',
-        status: 'confirmed',
-        razorpayPaymentId: payload.payload.payment?.entity?.id,
-        razorpaySignature: signature,
-        });
+          // Confirm both
+          await this.orderRepository.update(order._id.toString(), {
+          paymentStatus: 'paid',
+          status: 'pending',
+          razorpayPaymentId: payload.payload.payment?.entity?.id,
+          razorpaySignature: signature,
+          });
 
-        await this.reservationRepository.confirmReservationByRazorpayOrderId(razorpayOrderId);
-    }
+          await this.reservationRepository.confirmReservationByRazorpayOrderId(razorpayOrderId);
+      }
     }
 }

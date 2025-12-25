@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import { useDebounce } from "@/hooks/useDebounce";
 import {
     Sidebar,
     SidebarContent,
@@ -18,7 +20,7 @@ import {
     SidebarProvider,
     SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Home, Users, Settings, LogOut, Package, User, Moon, Sun, Store, Plus, Pencil, Trash2, Car } from "lucide-react";
+import { Home, Users, Settings, LogOut, Package, User, Moon, Sun, Store, Plus, Pencil, Trash2, Car, Search, Filter } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StoreDialog } from "@/components/StoreForm/StoreDialog";
 import { toast } from "sonner";
@@ -61,8 +63,15 @@ export default function StoresPage() {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [storeToDelete, setStoreToDelete] = useState<string | null>(null);
 
+    // Search/Filter State
+    const [searchQuery, setSearchQuery] = useState("");
+    const debouncedSearchQuery = useDebounce(searchQuery, 500); // Debounce search
+    const [filterDistrict, setFilterDistrict] = useState<string>("all");
+
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalStores, setTotalStores] = useState(0);
     const itemsPerPage = 10;
 
     useEffect(() => {
@@ -94,13 +103,43 @@ export default function StoresPage() {
         fetchStores();
     }, [router]);
 
+    // Reset page when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [debouncedSearchQuery, filterDistrict]);
+
+    // Fetch stores when page OR filters change
+    useEffect(() => {
+        if (mounted) {
+            fetchStores();
+        }
+    }, [currentPage, debouncedSearchQuery, filterDistrict, mounted]);
+
     const fetchStores = async () => {
         setLoading(true);
         try {
-            const response = await fetch('/api/v1/stores');
+            const token = localStorage.getItem('admin_access_token');
+            
+            // Build query params
+            const params = new URLSearchParams({
+                page: currentPage.toString(),
+                limit: itemsPerPage.toString(),
+            });
+            
+            // Add filters if not "all"
+            if (filterDistrict !== 'all') params.append('district', filterDistrict);
+            if (debouncedSearchQuery) params.append('search', debouncedSearchQuery);
+            
+            const response = await fetch(`/api/v1/admin/stores?${params.toString()}`, {
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
             const data = await response.json();
             if (data.success) {
                 setStores(data.data);
+                if (data.pagination) {
+                    setTotalPages(data.pagination.totalPages);
+                    setTotalStores(data.pagination.total);
+                }
             } else {
                 toast.error("Failed to load stores");
             }
@@ -190,11 +229,8 @@ export default function StoresPage() {
         .toUpperCase()
         .slice(0, 2) || 'AU';
 
-    const totalPages = Math.ceil(stores.length / itemsPerPage);
-    const paginatedStores = stores.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    );
+    // Backend now handles pagination
+    const paginatedStores = stores;
 
 
     return (
@@ -294,9 +330,43 @@ export default function StoresPage() {
                     <div className="p-8">
                         <div className="max-w-7xl mx-auto">
                             <h2 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">Stores</h2>
-                            <p className="text-gray-600 dark:text-gray-400 mb-8">
+                            <p className="text-gray-600 dark:text-gray-400 mb-6">
                                 Manage all store locations and their details.
                             </p>
+
+                            {/* Search and Filters */}
+                            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                                    <Input
+                                        placeholder="Search stores by name, address, or contact..."
+                                        className="pl-9"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                </div>
+                                <select
+                                    value={filterDistrict}
+                                    onChange={(e) => setFilterDistrict(e.target.value)}
+                                    className="px-3 py-2 border border-gray-200 dark:border-gray-800 rounded-md bg-white dark:bg-[#1a1a2e] text-gray-900 dark:text-white w-full sm:w-[200px]"
+                                >
+                                    <option value="all">All Districts</option>
+                                    <option value="Thiruvananthapuram">Thiruvananthapuram</option>
+                                    <option value="Kollam">Kollam</option>
+                                    <option value="Pathanamthitta">Pathanamthitta</option>
+                                    <option value="Alappuzha">Alappuzha</option>
+                                    <option value="Kottayam">Kottayam</option>
+                                    <option value="Idukki">Idukki</option>
+                                    <option value="Ernakulam">Ernakulam</option>
+                                    <option value="Thrissur">Thrissur</option>
+                                    <option value="Palakkad">Palakkad</option>
+                                    <option value="Malappuram">Malappuram</option>
+                                    <option value="Kozhikode">Kozhikode</option>
+                                    <option value="Wayanad">Wayanad</option>
+                                    <option value="Kannur">Kannur</option>
+                                    <option value="Kasaragod">Kasaragod</option>
+                                </select>
+                            </div>
 
                             {loading ? (
                                 <div className="text-center py-12">

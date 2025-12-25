@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import { useDebounce } from "@/hooks/useDebounce";
 import {
     Sidebar,
     SidebarContent,
@@ -80,10 +81,13 @@ export default function VehiclesPage() {
 
     // Filter/Search State
     const [searchQuery, setSearchQuery] = useState("");
+    const debouncedSearchQuery = useDebounce(searchQuery, 500); // Debounce search
     const [filterStore, setFilterStore] = useState<string>("all");
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalVehicles, setTotalVehicles] = useState(0);
     const itemsPerPage = 10;
 
     useEffect(() => {
@@ -118,7 +122,14 @@ export default function VehiclesPage() {
     // Reset page when filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, filterStore]);
+    }, [debouncedSearchQuery, filterStore]);
+
+    // Fetch data when page OR filters change
+    useEffect(() => {
+        if (mounted) {
+            fetchData();
+        }
+    }, [currentPage, debouncedSearchQuery, filterStore, mounted]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -127,7 +138,7 @@ export default function VehiclesPage() {
             const headers = { 'Authorization': `Bearer ${token}` };
 
             const [vehiclesRes, storesRes] = await Promise.all([
-                fetch('/api/v1/admin/vehicles', { headers }),
+                fetch(`/api/v1/admin/vehicles?page=${currentPage}&limit=${itemsPerPage}`, { headers }),
                 fetch('/api/v1/stores') // Stores generic API
             ]);
 
@@ -136,6 +147,10 @@ export default function VehiclesPage() {
 
             if (vehiclesData.success) {
                 setVehicles(vehiclesData.data);
+                if (vehiclesData.pagination) {
+                    setTotalPages(vehiclesData.pagination.totalPages);
+                    setTotalVehicles(vehiclesData.pagination.total);
+                }
             }
             if (storesData.success) {
                 setStores(storesData.data);
@@ -244,14 +259,8 @@ export default function VehiclesPage() {
         return matchesSearch && matchesStore;
     });
 
-
-
-    // Pagination Logic
-    const totalPages = Math.ceil(filteredVehicles.length / itemsPerPage);
-    const paginatedVehicles = filteredVehicles.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    );
+    // Backend now handles pagination, use vehicles directly
+    const paginatedVehicles = filteredVehicles;
 
 
     // ...

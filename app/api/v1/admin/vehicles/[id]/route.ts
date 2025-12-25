@@ -1,6 +1,7 @@
 import { HttpStatus } from "@/constants/status.constant";
 import { VehicleRepository } from "@/repository/vehicle.repository";
 import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
+import { verifyAdminAuthFromRequest } from "@/utils/admin-auth.utils";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Types } from "mongoose";
@@ -24,40 +25,6 @@ const updateVehicleSchema = z.object({
 });
 
 /**
- * Verify admin token from Authorization header
- */
-function verifyAdminAuth(request: NextRequest): { valid: boolean; message?: string } {
-    const authHeader = request.headers.get('authorization');
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return { valid: false, message: "No authorization token provided" };
-    }
-
-    const token = authHeader.split(' ')[1];
-
-    try {
-        // Decode JWT to verify it's an admin token
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(
-            atob(base64)
-                .split('')
-                .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                .join('')
-        );
-        const payload = JSON.parse(jsonPayload);
-
-        if (payload.role !== 'admin') {
-            return { valid: false, message: "Unauthorized: Admin access required" };
-        }
-
-        return { valid: true };
-    } catch {
-        return { valid: false, message: "Invalid token" };
-    }
-}
-
-/**
  * PUT /api/v1/admin/vehicles/[id]
  * Update an existing vehicle
  */
@@ -66,7 +33,7 @@ export const PUT = withLoggingAndErrorHandling(async (
     context: { params: Promise<{ id: string }> }
 ) => {
     // Verify admin authentication
-    const authCheck = verifyAdminAuth(request);
+    const authCheck = verifyAdminAuthFromRequest(request);
     if (!authCheck.valid) {
         return NextResponse.json({
             success: false,
@@ -130,7 +97,7 @@ export const DELETE = withLoggingAndErrorHandling(async (
     context: { params: Promise<{ id: string }> }
 ) => {
     // Verify admin authentication
-    const authCheck = verifyAdminAuth(request);
+    const authCheck = verifyAdminAuthFromRequest(request);
     if (!authCheck.valid) {
         return NextResponse.json({
             success: false,
