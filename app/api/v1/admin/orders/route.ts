@@ -3,6 +3,8 @@ import { OrderRepository } from "@/repository/order.repository";
 import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
 import { verifyAdminAuthFromRequest } from "@/utils/admin-auth.utils";
 import { NextRequest, NextResponse } from "next/server";
+import IUser from "@/core/interface/model/IUser.model";
+import { IVehicle } from "@/core/interface/model/IVehicle.model";
 
 const orderRepository = new OrderRepository();
 
@@ -29,7 +31,7 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
 
     try {
         // Fetch all orders with populated user, vehicle, and store data
-        let allOrders = await orderRepository.findAllWithPopulate();
+        const allOrders = await orderRepository.findAllWithPopulate();
         
         // Exclude pending + paid orders (those are in verification page)
         let filteredOrders = allOrders.filter(
@@ -49,8 +51,8 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
         // Apply search filter
         if (searchQuery) {
             filteredOrders = filteredOrders.filter(order => {
-                const user = order.user as any;
-                const vehicle = order.vehicle as any;
+                const user = order.user as IUser;
+                const vehicle = order.vehicle as IVehicle;
                 
                 const userName = user?.name?.toLowerCase() || "";
                 const userPhone = user?.phoneNumber?.toLowerCase() || "";

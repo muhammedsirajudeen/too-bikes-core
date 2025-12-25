@@ -114,7 +114,6 @@ export default function OrdersPage() {
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [totalOrders, setTotalOrders] = useState(0);
     const itemsPerPage = 10;
 
     useEffect(() => {
@@ -182,7 +181,6 @@ export default function OrdersPage() {
                 setOrders(data.data);
                 if (data.pagination) {
                     setTotalPages(data.pagination.totalPages);
-                    setTotalOrders(data.pagination.total);
                 }
             } else {
                 toast.error("Failed to load orders");
@@ -651,7 +649,7 @@ export default function OrdersPage() {
                     <DialogHeader>
                         <DialogTitle>Review License - Order #{selectedOrder?._id.slice(-8)}</DialogTitle>
                         <DialogDescription>
-                            Review the customer's driving license and confirm or reject the order.
+                            Review the customer&apos;s driving license and confirm or reject the order.
                         </DialogDescription>
                     </DialogHeader>
 

@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const GET = withLoggingAndErrorHandling(async (
     request: NextRequest,
-    { params }: { params: { orderId: string } }
+    context: { params: Promise<{ orderId: string }> }
 ) => {
     // Verify admin authentication
     const authCheck = verifyAdminAuthFromRequest(request);
@@ -16,6 +16,9 @@ export const GET = withLoggingAndErrorHandling(async (
             { status: HttpStatus.UNAUTHORIZED }
         );
     }
+
+    // Await params in Next.js 15
+    const { orderId } = await context.params;
 
     const { searchParams } = new URL(request.url);
     const frontKey = searchParams.get("frontKey");

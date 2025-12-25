@@ -372,7 +372,15 @@ import { ReservationModel } from '../model/reservation.model';
 import { OrderModel } from '../model/orders.model';
 
 // Mock Razorpay only (keep this — fine for test)
-const mockRazorpay = {
+const mockRazorpay: {
+    orders: {
+        create: () => Promise<{
+            id: string;
+            amount: number;
+            currency: string;
+        }>;
+    };
+} = {
   orders: {
     create: async () => ({
       id: 'rzp_mock_id_' + Math.random().toString(36).substring(7),
@@ -423,7 +431,7 @@ async function runTests() {
 
   // NO REPOSITORIES INJECTED — let service create its own (or inject clean ones)
   // const service = new Order2Service();
-  const service = new Order2Service(undefined, undefined, undefined, mockRazorpay);
+  const service = new Order2Service(undefined, undefined, undefined, undefined, mockRazorpay);
 
   const vehicleId = new mongoose.Types.ObjectId().toString();
   const storeId = new mongoose.Types.ObjectId().toString();

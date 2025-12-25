@@ -5,6 +5,7 @@ import { verifyAdminAuthFromRequest } from "@/utils/admin-auth.utils";
 import { NextRequest, NextResponse } from "next/server";
 import { Types } from "mongoose";
 import { z } from "zod";
+import { IOrder } from "@/core/interface/model/IOrder.model";
 
 const orderRepository = new OrderRepository();
 
@@ -15,7 +16,7 @@ const reviewOrderSchema = z.object({
 
 export const PATCH = withLoggingAndErrorHandling(async (
     request: NextRequest,
-    { params }: { params: { orderId: string } }
+    context: { params: Promise<{ orderId: string }> }
 ) => {
     // Verify admin authentication
     const authCheck = verifyAdminAuthFromRequest(request);
@@ -26,6 +27,9 @@ export const PATCH = withLoggingAndErrorHandling(async (
         );
     }
 
+    // Await params in Next.js 15
+    const { orderId } = await context.params;
+
     const body = await request.json();
     const validated = reviewOrderSchema.safeParse(body);
 
@@ -33,14 +37,13 @@ export const PATCH = withLoggingAndErrorHandling(async (
         return NextResponse.json(
             {
                 success: false,
-                message: "Invalid request",
+                message: "Invalid request data",
                 error: validated.error.issues,
             },
             { status: HttpStatus.BAD_REQUEST }
         );
     }
 
-    const { orderId } = params;
     const { action, reason } = validated.data;
 
     try {
@@ -66,7 +69,7 @@ export const PATCH = withLoggingAndErrorHandling(async (
         }
 
         // Update order based on action
-        let updateData: any = {};
+        let updateData: Partial<Pick<IOrder, 'status' | 'cancellationReason'>> = {};
         
         if (action === "confirm") {
             updateData = { status: "confirmed" };
