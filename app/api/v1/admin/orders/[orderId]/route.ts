@@ -19,14 +19,50 @@ const reviewOrderSchema = z.object({
     reason: z.string().optional(),
 });
 
-export const PATCH = withLoggingAndErrorHandling(
-    requirePermission(Permission.ORDER_UPDATE, async (
-        request: NextRequest,
-        admin,
-        context: { params: Promise<{ orderId: string }> }
-    ) => {
-        // Await params in Next.js 15
-        const { orderId } = await context.params;
+export const PATCH = withLoggingAndErrorHandling(async (
+    request: NextRequest,
+    context: { params: Promise<{ orderId: string }> }
+) => {
+    // Check permission first
+    const token = request.headers.get('authorization')?.split(' ')[1];
+    if (!token) {
+        return NextResponse.json(
+            { success: false, message: "No authorization token" },
+            { status: HttpStatus.UNAUTHORIZED }
+        );
+    }
+
+    // Decode token to check permission
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+            atob(base64)
+                .split('')
+                .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                .join('')
+        );
+        const payload = JSON.parse(jsonPayload);
+        
+        // Check if has ORDER_UPDATE permission
+        const { getPermissionsForRole, Permission } = await import("@/constants/permissions.constant");
+        const permissions = getPermissionsForRole(payload.role);
+        if (!permissions.includes(Permission.ORDER_UPDATE)) {
+            return NextResponse.json(
+                { success: false, message: "Insufficient permissions" },
+                { status: HttpStatus.FORBIDDEN }
+            );
+        }
+    } catch (error) {
+        return NextResponse.json(
+            { success: false, message: "Invalid token" },
+            { status: HttpStatus.UNAUTHORIZED }
+        );
+    }
+
+    // Await params in Next.js 15
+    const { orderId } = await context.params;
+
 
         const body = await request.json();
         const validated = reviewOrderSchema.safeParse(body);
@@ -92,5 +128,5 @@ export const PATCH = withLoggingAndErrorHandling(
                 message: "Failed to review order",
             }, { status: HttpStatus.INTERNAL_SERVER_ERROR });
         }
-    })
+    }
 );
