@@ -24,7 +24,7 @@
 
       status: {
         type: String,
-        enum: ["pending", "confirmed", "ongoing", "completed", "cancelled"],
+        enum: ["pending", "confirmed", "ongoing", "completed", "cancelled", "rejected"],
         default: "pending"
       },
 
@@ -34,7 +34,8 @@
         default: "pending"
       },
 
-      cancellationReason: { type: String }
+      cancellationReason: { type: String },
+      rejectionReason: { type: String }
     },
     { timestamps: true }
   );

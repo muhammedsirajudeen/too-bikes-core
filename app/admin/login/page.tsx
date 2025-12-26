@@ -54,9 +54,13 @@ export default function AdminLoginPage() {
                 return;
             }
 
-            // Store token in localStorage
+            // Store token and admin user data (including permissions) in localStorage
             if (data.token) {
                 localStorage.setItem('admin_access_token', data.token);
+            }
+            
+            if (data.admin) {
+                localStorage.setItem('admin_user', JSON.stringify(data.admin));
             }
 
             // Redirect to admin dashboard

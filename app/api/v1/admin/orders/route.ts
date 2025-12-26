@@ -1,22 +1,22 @@
 import { HttpStatus } from "@/constants/status.constant";
 import { OrderRepository } from "@/repository/order.repository";
 import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
-import { verifyAdminAuthFromRequest } from "@/utils/admin-auth.utils";
+import { requirePermission } from "@/middleware/permission.middleware";
+import { Permission } from "@/constants/permissions.constant";
 import { NextRequest, NextResponse } from "next/server";
 import IUser from "@/core/interface/model/IUser.model";
 import { IVehicle } from "@/core/interface/model/IVehicle.model";
 
+// Import models to ensure they're registered with Mongoose
+import "@/model/user.model";
+import "@/model/vehicles.model";
+import "@/model/store.model";
+
 const orderRepository = new OrderRepository();
 
-export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
-    // Verify admin authentication
-    const authCheck = verifyAdminAuthFromRequest(request);
-    if (!authCheck.valid) {
-        return NextResponse.json(
-            { success: false, message: authCheck.message },
-            { status: HttpStatus.UNAUTHORIZED }
-        );
-    }
+export const GET = withLoggingAndErrorHandling(
+    requirePermission(Permission.ORDER_VIEW, async (request: NextRequest) => {
+
 
     // Get pagination and filter params from query
     const { searchParams } = new URL(request.url);
@@ -92,4 +92,5 @@ export const GET = withLoggingAndErrorHandling(async (request: NextRequest) => {
             message: "Failed to fetch orders",
         }, { status: HttpStatus.INTERNAL_SERVER_ERROR });
     }
-});
+}));
+

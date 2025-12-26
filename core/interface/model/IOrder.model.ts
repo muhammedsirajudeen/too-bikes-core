@@ -31,11 +31,13 @@ export interface IOrder extends Document {
   | "confirmed"
   | "ongoing"
   | "completed"
-  | "cancelled";
+  | "cancelled"
+  | "rejected";
 
   paymentStatus: "pending" | "paid" | "refunded";
 
   cancellationReason?: string;
+  rejectionReason?: string;
 
   createdAt?: Date;
   updatedAt?: Date;

@@ -4,6 +4,7 @@ import { withLoggingAndErrorHandling } from "@/utils/decorator.utilt";
 import { generateAccessToken, generateRefreshToken } from "@/utils/jwt.utils";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { getPermissionsForRole, AdminRole } from "@/constants/permissions.constant";
 
 // Schema for admin login
 const adminLoginSchema = z.object({
@@ -19,6 +20,7 @@ export interface AdminLoginResponse {
         id: string;
         username: string;
         role: string;
+        permissions: string[];
     };
     error?: Array<{ message?: string; path?: string[] }>;
 }
@@ -55,17 +57,23 @@ export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => 
         }, { status: HttpStatus.UNAUTHORIZED });
     }
 
+    // Get role from database (defaults to staff if not set)
+    const adminRole = (admin.role || AdminRole.STAFF) as AdminRole;
+    
+    // Get permissions for this role
+    const permissions = getPermissionsForRole(adminRole);
+
     // Generate JWT tokens with admin ID, username, and role
     const payload = {
         id: admin._id.toString(),
         username: admin.username,
-        role: "admin",
+        role: adminRole,
     };
 
     const token = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
-    // Create response with access token in body
+    // Create response with access token and permissions
     const response = NextResponse.json({
         success: true,
         message: "Login successful",
@@ -73,7 +81,8 @@ export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => 
         admin: {
             id: admin._id.toString(),
             username: admin.username,
-            role: "admin",
+            role: adminRole,
+            permissions, // Send resolved permissions to frontend
         },
     }, { status: HttpStatus.OK });
 
@@ -88,3 +97,4 @@ export const POST = withLoggingAndErrorHandling(async (request: NextRequest) => 
 
     return response;
 });
+

@@ -33,7 +33,8 @@ export function middleware(request: NextRequest) {
 
         if (token) {
             const payload = decodeToken(token);
-            if (payload && payload.role === 'admin') {
+            // Accept both admin and staff roles
+            if (payload && (payload.role === 'admin' || payload.role === 'staff')) {
                 return NextResponse.redirect(new URL('/admin/dashboard', request.url));
             }
         }
@@ -46,18 +47,19 @@ export function middleware(request: NextRequest) {
         const token = request.cookies.get('admin_refresh_token')?.value;
 
         if (!token) {
-            return NextResponse.redirect(new URL('/', request.url));
+            return NextResponse.redirect(new URL('/admin/login', request.url));
         }
 
         // Decode token (not verifying signature here, just checking structure)
         const payload = decodeToken(token);
 
-        if (!payload || payload.role !== 'admin') {
-            return NextResponse.redirect(new URL('/', request.url));
+        // Accept both admin and staff - permission guards will handle specific access
+        if (!payload || (payload.role !== 'admin' && payload.role !== 'staff')) {
+            return NextResponse.redirect(new URL('/admin/login', request.url));
         }
 
-        // Token exists and has admin role, allow access
-        // Full verification will happen in API routes
+        // Token exists and has admin/staff role, allow access
+        // Full permission verification will happen in API routes and permission guards
         return NextResponse.next();
     }
 
