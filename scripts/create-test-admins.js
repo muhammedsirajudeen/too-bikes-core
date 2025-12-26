@@ -1,67 +1,83 @@
 /**
- * Script to create test admin and staff users
- * Run: node scripts/create-test-admins.js
+ * Quick script to verify staff user has correct role
  */
 
-const mongoose = require('mongoose');
+const { MongoClient } = require('mongodb');
 require('dotenv').config();
 
-const AdminSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: {
-        type: String,
-        enum: ['admin', 'staff'],
-        default: 'staff',
-        required: true
-    },
-});
+async function checkStaffUser() {
+    const client = new MongoClient(process.env.MONGODB_URI);
 
-async function createTestAdmins() {
     try {
-        console.log('Connecting to MongoDB...');
-        await mongoose.connect(process.env.MONGODB_URI);
-        console.log('Connected successfully!');
+        await client.connect();
+        console.log('Connected to MongoDB');
 
-        const Admin = mongoose.models.Admin || mongoose.model('Admin', AdminSchema);
+        const db = client.db();
+        const admins = db.collection('admins');
 
-        // Create admin user
-        const adminUser = await Admin.findOneAndUpdate(
-            { username: 'admin' },
-            {
-                username: 'admin',
-                password: 'admin123',  // Note: Use hashing in production!
-                role: 'admin'
-            },
-            { upsert: true, new: true }
-        );
-        console.log('✅ Created/Updated admin user:', adminUser.username, '- Role:', adminUser.role);
+        // Check if staff user exists
+        const staffUser = await admins.findOne({ username: 'staff' });
 
-        // Create staff user
-        const staffUser = await Admin.findOneAndUpdate(
-            { username: 'staff' },
-            {
+        if (staffUser) {
+            console.log('\n✅ Staff user found:');
+            console.log('   Username:', staffUser.username);
+            console.log('   Role:', staffUser.role);
+            console.log('   Password:', staffUser.password);
+
+            if (staffUser.role !== 'staff') {
+                console.log('\n⚠️  Updating staff user role to "staff"...');
+                await admins.updateOne(
+                    { username: 'staff' },
+                    { $set: { role: 'staff' } }
+                );
+                console.log('✅ Role updated');
+            }
+        } else {
+            console.log('\n❌ Staff user not found. Creating...');
+            await admins.insertOne({
                 username: 'staff',
-                password: 'staff123',  // Note: Use hashing in production!
+                password: 'staff123',
                 role: 'staff'
-            },
-            { upsert: true, new: true }
-        );
-        console.log('✅ Created/Updated staff user:', staffUser.username, '- Role:', staffUser.role);
+            });
+            console.log('✅ Staff user created');
+        }
 
-        console.log('\n📋 Test Credentials:');
-        console.log('   Admin - username: admin, password: admin123');
-        console.log('   Staff - username: staff, password: staff123');
-        console.log('\n🔐 Permissions:');
-        console.log('   Admin: Full access to all features');
-        console.log('   Staff: No access to user management');
+        // Check admin user
+        const adminUser = await admins.findOne({ username: 'admin' });
 
-        await mongoose.disconnect();
-        console.log('\n✅ Done! Database connection closed.');
+        if (adminUser) {
+            console.log('\n✅ Admin user found:');
+            console.log('   Username:', adminUser.username);
+            console.log('   Role:', adminUser.role);
+
+            if (adminUser.role !== 'admin') {
+                console.log('\n⚠️  Updating admin user role to "admin"...');
+                await admins.updateOne(
+                    { username: 'admin' },
+                    { $set: { role: 'admin' } }
+                );
+                console.log('✅ Role updated');
+            }
+        } else {
+            console.log('\n❌ Admin user not found. Creating...');
+            await admins.insertOne({
+                username: 'admin',
+                password: 'admin123',
+                role: 'admin'
+            });
+            console.log('✅ Admin user created');
+        }
+
+        console.log('\n✅ All done!');
+        console.log('\nLogin credentials:');
+        console.log('  Admin: admin / admin123');
+        console.log('  Staff: staff / staff123');
+
     } catch (error) {
         console.error('❌ Error:', error);
-        process.exit(1);
+    } finally {
+        await client.close();
     }
 }
 
-createTestAdmins();
+checkStaffUser();

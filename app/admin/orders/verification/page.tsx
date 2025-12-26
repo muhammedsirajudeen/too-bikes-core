@@ -1,25 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
+import AdminLayout from "@/components/AdminLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import { useDebounce } from "@/hooks/useDebounce";
-import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    SidebarProvider,
-    SidebarTrigger,
-} from "@/components/ui/sidebar";
 import {
     Dialog,
     DialogContent,
@@ -38,8 +24,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Home, Users, Settings, LogOut, Package, User, Moon, Sun, Store, Car, Search, FileText, CheckCircle, XCircle, Loader2, ZoomIn, X } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Search, FileText, CheckCircle, XCircle, Loader2, ZoomIn, X } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 
@@ -65,7 +50,7 @@ interface Order {
     startTime: string;
     endTime: string;
     totalAmount: number;
-    status: "pending" | "confirmed" | "ongoing" | "completed" | "cancelled";
+    status: "pending" | "confirmed" | "ongoing" | "completed" | "cancelled" | "rejected";
     paymentStatus: "pending" | "paid" | "refunded";
     license?: {
         frontImage: string;
@@ -75,11 +60,6 @@ interface Order {
 }
 
 export default function OrderVerificationPage() {
-    const router = useRouter();
-    const { theme, setTheme } = useTheme();
-    const [mounted, setMounted] = useState(false);
-    const [adminUsername, setAdminUsername] = useState<string>("");
-    const [sidebarOpen, setSidebarOpen] = useState(true);
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -101,40 +81,12 @@ export default function OrderVerificationPage() {
 
     // Search State
     const [searchQuery, setSearchQuery] = useState("");
-    const debouncedSearchQuery = useDebounce(searchQuery, 500); // Debounce search
+    const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const itemsPerPage = 10;
-
-    useEffect(() => {
-        setMounted(true);
-
-        const token = localStorage.getItem('admin_access_token');
-        if (!token) {
-            router.push('/');
-            return;
-        }
-
-        try {
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(
-                atob(base64)
-                    .split('')
-                    .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                    .join('')
-            );
-            const payload = JSON.parse(jsonPayload);
-            setAdminUsername(payload.username || 'Admin');
-        } catch (error) {
-            console.error('Failed to decode token:', error);
-            router.push('/');
-        }
-
-        fetchOrders();
-    }, [router]);
 
     // Reset page to 1 when search changes
     useEffect(() => {
@@ -143,10 +95,8 @@ export default function OrderVerificationPage() {
 
     // Fetch orders when page OR search changes
     useEffect(() => {
-        if (mounted) {
-            fetchOrders();
-        }
-    }, [currentPage, debouncedSearchQuery, mounted]);
+        fetchOrders();
+    }, [currentPage, debouncedSearchQuery]);
 
     const fetchOrders = async () => {
         setLoading(true);
@@ -286,36 +236,7 @@ export default function OrderVerificationPage() {
         }
     };
 
-    const handleLogout = async () => {
-        try {
-            await fetch('/api/v1/admin/logout', { method: 'POST' });
-        } catch (error) {
-            console.error('Logout API error:', error);
-        }
-        localStorage.removeItem('admin_access_token');
-        router.push('/');
-    };
-
-    if (!mounted) return null;
-
-    const navigationItems = [
-        { name: 'Dashboard', icon: Home, href: '/admin/dashboard' },
-        { name: 'Users', icon: Users, href: '/admin/users' },
-        { name: 'Orders', icon: Package, href: '/admin/orders' },
-        { name: 'Order Verification', icon: FileText, href: '/admin/orders/verification' },
-        { name: 'Store Management', icon: Store, href: '/admin/stores' },
-        { name: 'Vehicle Management', icon: Car, href: '/admin/vehicles' },
-        { name: 'Settings', icon: Settings, href: '/admin/settings' },
-    ];
-
-    const initials = adminUsername
-        .split(' ')
-        .map(n => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2) || 'AU';
-
-    // Backend handles filtering, just apply search on frontend
+    // Frontend search filter
     const filteredOrders = orders.filter((order) => {
         const query = searchQuery.toLowerCase();
         const userName = order.user.name?.toLowerCase() || "";
@@ -329,223 +250,126 @@ export default function OrderVerificationPage() {
             orderId.includes(query);
     });
 
-    // Backend now handles pagination, so we use orders directly
-    const paginatedOrders = filteredOrders;
-
     return (
-        <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
-            <div className="flex min-h-screen w-full">
-                <Sidebar collapsible="icon">
-                    <SidebarHeader className="border-b border-gray-200 dark:border-gray-700 p-4">
-                        <div className="flex items-center gap-2">
-                            <User className="w-5 h-5" />
-                            <span className="font-bold group-data-[collapsible=icon]:hidden">Admin Panel</span>
-                        </div>
-                    </SidebarHeader>
+        <AdminLayout pageTitle="Order Verification" pageSubtitle="Review licenses for pending orders">
+            <div className="space-y-6">
+                {/* Search */}
+                <div className="flex justify-between items-center">
+                    <div className="relative w-full sm:w-[250px]">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                        <Input
+                            placeholder="Search orders..."
+                            className="pl-9"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                </div>
 
-                    <SidebarContent>
-                        <SidebarGroup>
-                            <SidebarGroupContent>
-                                <SidebarMenu>
-                                    {navigationItems.map((item) => {
-                                        const Icon = item.icon;
-                                        const isActive = item.href === '/admin/orders/verification';
-                                        return (
-                                            <SidebarMenuItem key={item.name}>
-                                                <SidebarMenuButton
-                                                    onClick={() => router.push(item.href)}
-                                                    tooltip={item.name}
-                                                    isActive={isActive}
+                {/* Orders Table */}
+                {loading ? (
+                    <div className="text-center py-12">
+                        <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin text-gray-500" />
+                        <p className="text-gray-500 dark:text-gray-400">Loading orders...</p>
+                    </div>
+                ) : filteredOrders.length === 0 ? (
+                    <div className="bg-white dark:bg-[#1a1a2e] rounded-xl p-12 border border-gray-200 dark:border-gray-700 text-center">
+                        <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
+                        <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+                            {orders.length === 0 ? "All caught up!" : "No orders found"}
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400">
+                            {orders.length === 0 ? "No orders pending verification at the moment." : "Try adjusting your search."}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="bg-white dark:bg-[#1a1a2e] rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-gray-50 dark:bg-[#0f0f23] border-b border-gray-200 dark:border-gray-800">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Order ID
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Customer
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Vehicle
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Duration
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Amount
+                                        </th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                                    {filteredOrders.map((order) => (
+                                        <tr key={order._id} className="hover:bg-gray-50 dark:hover:bg-[#0f0f23]">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm font-mono text-gray-900 dark:text-white">
+                                                    #{order._id.slice(-8)}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                                        {order.user.name || "Unknown"}
+                                                    </span>
+                                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                        {order.user.phoneNumber}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                                        {order.vehicle.brand} {order.vehicle.name}
+                                                    </span>
+                                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                        {order.vehicle.licensePlate}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-900 dark:text-white">
+                                                    {new Date(order.startTime).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} - {new Date(order.endTime).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                                                    ₹{order.totalAmount.toLocaleString('en-IN')}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => handleReviewOrder(order)}
+                                                    className="flex items-center gap-2"
                                                 >
-                                                    <Icon />
-                                                    <span>{item.name}</span>
-                                                </SidebarMenuButton>
-                                            </SidebarMenuItem>
-                                        );
-                                    })}
-                                </SidebarMenu>
-                            </SidebarGroupContent>
-                        </SidebarGroup>
-                    </SidebarContent>
-
-                    <SidebarFooter className="border-t border-gray-200 dark:border-gray-700 p-2">
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    size="lg"
-                                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                                >
-                                    <Avatar className="h-8 w-8 rounded-lg">
-                                        <AvatarFallback className="rounded-lg bg-blue-600 text-white">
-                                            {initials}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div className="grid flex-1 text-left text-sm leading-tight">
-                                        <span className="truncate font-semibold">{adminUsername}</span>
-                                        <span className="truncate text-xs text-gray-500 dark:text-gray-400">Admin User</span>
-                                    </div>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton onClick={handleLogout} tooltip="Logout">
-                                    <LogOut />
-                                    <span>Logout</span>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarFooter>
-                </Sidebar>
-
-                <main className="flex-1 overflow-auto bg-gray-50 dark:bg-[#0f0f23]">
-                    <div className="sticky top-0 z-10 bg-white dark:bg-[#1a1a2e] border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center gap-3">
-                        <SidebarTrigger />
-                        <div className="flex items-center justify-between flex-1">
-                            <div>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">Workspace</p>
-                                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Order Verification</h2>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                                    className="h-9 w-9"
-                                >
-                                    <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                                    <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                                    <span className="sr-only">Toggle theme</span>
-                                </Button>
+                                                    <FileText className="h-4 w-4" />
+                                                    Review License
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <div className="px-6 pb-4">
+                                <DataTablePagination
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    onPageChange={setCurrentPage}
+                                />
                             </div>
                         </div>
                     </div>
-
-                    <div className="p-8">
-                        <div className="max-w-7xl mx-auto">
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                                <div>
-                                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Pending Verification</h2>
-                                    <p className="text-gray-600 dark:text-gray-400">
-                                        Review licenses for paid orders awaiting confirmation
-                                    </p>
-                                </div>
-
-                                <div className="relative w-full sm:w-[250px]">
-                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                                    <Input
-                                        placeholder="Search orders..."
-                                        className="pl-9"
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            {loading ? (
-                                <div className="text-center py-12">
-                                    <Loader2 className="h-8 w-8 mx-auto mb-4 animate-spin text-gray-500" />
-                                    <p className="text-gray-500 dark:text-gray-400">Loading orders...</p>
-                                </div>
-                            ) : filteredOrders.length === 0 ? (
-                                <div className="bg-white dark:bg-[#1e1e3f] rounded-xl p-12 border border-gray-200 dark:border-gray-800 text-center">
-                                    <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
-                                    <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
-                                        {orders.length === 0 ? "All caught up!" : "No orders found"}
-                                    </h3>
-                                    <p className="text-gray-600 dark:text-gray-400">
-                                        {orders.length === 0 ? "No orders pending verification at the moment." : "Try adjusting your search."}
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="bg-white dark:bg-[#1e1e3f] rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full">
-                                            <thead className="bg-gray-50 dark:bg-[#0f0f23] border-b border-gray-200 dark:border-gray-800">
-                                                <tr>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                                        Order ID
-                                                    </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                                        Customer
-                                                    </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                                        Vehicle
-                                                    </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                                        Duration
-                                                    </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                                        Amount
-                                                    </th>
-                                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                                        Actions
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                                                {paginatedOrders.map((order) => (
-                                                    <tr key={order._id} className="hover:bg-gray-50 dark:hover:bg-[#0f0f23]">
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="text-sm font-mono text-gray-900 dark:text-white">
-                                                                #{order._id.slice(-8)}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="flex flex-col">
-                                                                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                                                    {order.user.name || "Unknown"}
-                                                                </span>
-                                                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                                                    {order.user.phoneNumber}
-                                                                </span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="flex flex-col">
-                                                                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                                                    {order.vehicle.brand} {order.vehicle.name}
-                                                                </span>
-                                                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                                                    {order.vehicle.licensePlate}
-                                                                </span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="text-sm text-gray-900 dark:text-white">
-                                                                {new Date(order.startTime).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} - {new Date(order.endTime).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                                                                ₹{order.totalAmount.toLocaleString('en-IN')}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                            <Button
-                                                                size="sm"
-                                                                onClick={() => handleReviewOrder(order)}
-                                                                className="flex items-center gap-2"
-                                                            >
-                                                                <FileText className="h-4 w-4" />
-                                                                Review License
-                                                            </Button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                        <div className="px-6 pb-4">
-                                            <DataTablePagination
-                                                currentPage={currentPage}
-                                                totalPages={totalPages}
-                                                onPageChange={setCurrentPage}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </main>
+                )}
             </div>
 
             {/* License Review Modal */}
@@ -762,6 +586,6 @@ export default function OrderVerificationPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </SidebarProvider>
+        </AdminLayout>
     );
 }

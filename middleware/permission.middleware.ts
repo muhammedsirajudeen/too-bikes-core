@@ -87,12 +87,13 @@ export function checkPermission(
 /**
  * Middleware wrapper to require specific permission
  * Usage: requirePermission(Permission.USER_VIEW, async (request, admin) => {...})
+ * For dynamic routes: requirePermission(Permission.USER_VIEW, async (request, admin, context) => {...})
  */
-export function requirePermission(
+export function requirePermission<T = any>(
     permission: Permission,
-    handler: (request: NextRequest, admin: AdminTokenPayload) => Promise<NextResponse>
+    handler: (request: NextRequest, admin: AdminTokenPayload, ...args: any[]) => Promise<NextResponse>
 ) {
-    return async (request: NextRequest): Promise<NextResponse> => {
+    return async (request: NextRequest, ...args: any[]): Promise<NextResponse> => {
         const result = checkPermission(request, permission);
 
         if (!result.authorized) {
@@ -105,8 +106,8 @@ export function requirePermission(
             );
         }
 
-        // Pass the admin payload to the handler
-        return handler(request, result.admin!);
+        // Pass the admin payload and any additional arguments (like context for dynamic routes)
+        return handler(request, result.admin!, ...args);
     };
 }
 

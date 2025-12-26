@@ -106,6 +106,8 @@ function AdminLayoutContent({ children, pageTitle = "Dashboard", pageSubtitle }:
     // Filter navigation items based on permissions
     const navigationItems = allNavigationItems.filter(item => hasPermission(item.permission));
 
+
+
     const adminUsername = admin?.username || 'Admin';
     const initials = adminUsername
         .split(' ')

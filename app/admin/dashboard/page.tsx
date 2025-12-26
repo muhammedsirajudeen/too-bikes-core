@@ -144,6 +144,7 @@ function DashboardContent() {
     }: { 
         title: string; 
         value: number | string; 
+        //eslint-disable-next-line
         icon: any; 
         color: string; 
         subtitle?: string;
@@ -166,14 +167,13 @@ function DashboardContent() {
 
     return (
         <div className="space-y-6">
-            <div className="space-y-6">
-                {/* Welcome Section */}
-                <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white">
-                    <h2 className="text-2xl font-bold mb-2">
-                        Welcome back, {admin?.username || 'Admin'}!
-                    </h2>
-                    <p className="text-blue-100">
-                        Here's what's happening with your platform today.
+            {/* Welcome Section */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white">
+                <h2 className="text-2xl font-bold mb-2">
+                    Welcome back, {admin?.username || 'Admin'}!
+                </h2>
+                <p className="text-blue-100">
+                        Here&apos;s what&apos;s happening with your platform today.
                     </p>
                     <div className="mt-4 inline-flex items-center px-4 py-2 bg-white/20 rounded-lg backdrop-blur-sm">
                         <span className="text-sm font-medium capitalize">Role: {admin?.role || 'Admin'}</span>
@@ -347,7 +347,6 @@ function DashboardContent() {
                     </div>
                 </div>
             </div>
-        </div>
     );
 }
 

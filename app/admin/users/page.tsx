@@ -93,7 +93,7 @@ export default function UsersPage() {
                     <div className="text-center py-12">
                         <h3 className="text-xl font-semibold mb-2">Access Denied</h3>
                         <p className="text-gray-600 dark:text-gray-400">
-                            You don't have permission to view users.
+                            You don &apos;t have permission to view users.
                         </p>
                     </div>
                 }
