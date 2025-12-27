@@ -200,8 +200,8 @@ export default function DesktopLandingPage() {
                         <Image
                             src="/logo.png"
                             alt="TooBikes Logo"
-                            width={60}
-                            height={60}
+                            width={45}
+                            height={45}
                             className="object-contain"
                         />
                     </div>

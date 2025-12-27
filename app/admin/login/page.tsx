@@ -58,7 +58,7 @@ export default function AdminLoginPage() {
             if (data.token) {
                 localStorage.setItem('admin_access_token', data.token);
             }
-            
+
             if (data.admin) {
                 localStorage.setItem('admin_user', JSON.stringify(data.admin));
             }
@@ -175,8 +175,8 @@ export default function AdminLoginPage() {
                         <Image
                             src="/logo.png"
                             alt="TooBikes Logo"
-                            width={60}
-                            height={60}
+                            width={45}
+                            height={45}
                             className="object-contain"
                         />
                     </div>
